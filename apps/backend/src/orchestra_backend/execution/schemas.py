@@ -85,6 +85,8 @@ class RunOut(BaseModel):
     result_summary: str | None
     error_code: str | None
     error_summary: str | None
+    # Token/cost totals from model runtimes (ADR-0023); None for mock runs.
+    usage_json: dict[str, Any] | None = None
 
 
 class ArtifactOut(BaseModel):

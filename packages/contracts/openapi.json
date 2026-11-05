@@ -2783,6 +2783,18 @@
               }
             ],
             "title": "Task Id"
+          },
+          "usage_json": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Json"
           }
         },
         "required": [
@@ -2925,6 +2937,18 @@
               }
             ],
             "title": "Task Id"
+          },
+          "usage_json": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Json"
           }
         },
         "required": [

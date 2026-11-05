@@ -2212,6 +2212,10 @@ export interface components {
             task: components["schemas"]["TaskOut"] | null;
             /** Task Id */
             task_id: string | null;
+            /** Usage Json */
+            usage_json?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** RunOut */
         RunOut: {
@@ -2261,6 +2265,10 @@ export interface components {
             status: "queued" | "running" | "waiting_approval" | "paused" | "cancel_requested" | "completed" | "failed" | "cancelled";
             /** Task Id */
             task_id: string | null;
+            /** Usage Json */
+            usage_json?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** RuntimeInfo */
         RuntimeInfo: {

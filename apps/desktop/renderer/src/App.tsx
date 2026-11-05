@@ -9,6 +9,8 @@ import { SelectionProvider, useSelection } from "./state/selection";
 import { AgentsView } from "./views/AgentsView";
 import { ApprovalsView } from "./views/ApprovalsView";
 import { KnowledgeView } from "./views/KnowledgeView";
+import { ConnectionsView } from "./views/ConnectionsView";
+import { KpiView } from "./views/KpiView";
 import { CapabilitiesView } from "./views/CapabilitiesView";
 import { OrgView } from "./views/OrgView";
 import { CompanyOverview } from "./views/CompanyOverview";
@@ -72,6 +74,10 @@ function Shell() {
           <ApprovalsView companyId={companyId} />
         ) : view === "knowledge" ? (
           <KnowledgeView companyId={companyId} />
+        ) : view === "analytics" ? (
+          <KpiView companyId={companyId} />
+        ) : view === "connections" ? (
+          <ConnectionsView companyId={companyId} />
         ) : (
           <Placeholder view={view} />
         )}

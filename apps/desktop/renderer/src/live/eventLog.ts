@@ -43,6 +43,9 @@ export function queriesToRefresh(e: EventEnvelope): string[][] {
   if (t.startsWith("lesson.")) out.push(["lessons", cid]);
   if (t.startsWith("role_change.")) out.push(["roleProposals", cid]);
   if (t.startsWith("task.")) out.push(["tasks", cid]);
+  if (t.startsWith("credential.")) out.push(["credentials"]);
+  if (t === "agent.run.usage_recorded" || t === "agent.run.completed" || t === "agent.run.failed")
+    out.push(["kpis", cid]);
   if (t.startsWith("agent.run.") || t === "artifact.created") {
     out.push(["runs", cid]);
     if (e.run_id) out.push(["run", e.run_id], ["runEvents", e.run_id]);
@@ -126,6 +129,19 @@ export function describeEvent(e: EventEnvelope): string {
       return `Đã duyệt: ${p.status}`;
     case "role_change.proposed":
       return `Đề xuất đổi vai trò: ${Object.keys((p.changes as object) ?? {}).join(", ")}`;
+    case "agent.run.usage_recorded": {
+      const cost =
+        typeof p.cost_usd === "number" ? ` · ~${(p.cost_usd as number).toFixed(4)} USD (ước tính)` : " · chưa có giá";
+      return `${p.model}: ${p.input_tokens} token vào, ${p.output_tokens} token ra${cost}`;
+    }
+    case "credential.created":
+      return `Thêm credential "${p.label}" (${p.provider})`;
+    case "credential.rotated":
+      return `Xoay secret của "${p.label}"`;
+    case "credential.revoked":
+      return `Thu hồi credential "${p.label}"`;
+    case "credential.verified":
+      return `Kiểm tra "${p.label}": ${p.ok ? "OK" : "lỗi"}`;
     case "scenario.started":
       return `Bắt đầu kịch bản ${p.scenario_id}`;
     default:

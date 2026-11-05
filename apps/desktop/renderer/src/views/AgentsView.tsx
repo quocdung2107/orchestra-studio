@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useAgents, useCreateAgent, useRuntimes } from "../api/hooks";
+import { useAgents, useCreateAgent } from "../api/hooks";
+import { RuntimeSettingsForm, type RuntimeChoice } from "../components/RuntimeSettingsForm";
 import { fetchAgentPreset, useDepartments, useTemplates } from "../api/hooks-p1";
 import { Button, Empty, ErrorView, Loading, Section, StatusBadge, inputClass } from "../components/ui";
 import { useSelection } from "../state/selection";
@@ -52,12 +53,11 @@ export function AgentsView({ companyId }: { companyId: string }) {
 
 function CreateAgentForm({ companyId, onDone }: { companyId: string; onDone: () => void }) {
   const create = useCreateAgent(companyId);
-  const runtimes = useRuntimes();
   const { select } = useSelection();
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [runtimeId, setRuntimeId] = useState("mock");
+  const [runtime, setRuntime] = useState<RuntimeChoice>({ runtime_id: "mock", settings: {} });
   const [departmentId, setDepartmentId] = useState("");
   const [presetError, setPresetError] = useState<unknown>(null);
   const templates = useTemplates();
@@ -70,7 +70,7 @@ function CreateAgentForm({ companyId, onDone }: { companyId: string; onDone: () 
       setName(p.name);
       setRole(p.role);
       setInstructions(p.instructions);
-      setRuntimeId(p.runtime);
+      setRuntime({ runtime_id: p.runtime, settings: {} });
       setPresetError(null);
     } catch (e) {
       setPresetError(e);
@@ -83,7 +83,7 @@ function CreateAgentForm({ companyId, onDone }: { companyId: string; onDone: () 
       onSubmit={(e) => {
         e.preventDefault();
         create.mutate(
-          { name, role, department_id: departmentId || null, definition: { instructions }, runtime: { runtime_id: runtimeId } },
+          { name, role, department_id: departmentId || null, definition: { instructions }, runtime },
           { onSuccess: (a) => { select({ kind: "agent", id: a.id }); onDone(); } },
         );
       }}
@@ -102,13 +102,7 @@ function CreateAgentForm({ companyId, onDone }: { companyId: string; onDone: () 
       <input className={inputClass} placeholder="Tên" value={name} onChange={(e) => setName(e.target.value)} />
       <input className={inputClass} placeholder="Vai trò (ví dụ Researcher)" value={role} onChange={(e) => setRole(e.target.value)} />
       <textarea className={inputClass} rows={3} placeholder="Chỉ dẫn" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
-      <select className={inputClass} value={runtimeId} onChange={(e) => setRuntimeId(e.target.value)}>
-        {runtimes.data?.map((r) => (
-          <option key={r.runtime_id} value={r.runtime_id}>
-            {r.display_name}
-          </option>
-        ))}
-      </select>
+      <RuntimeSettingsForm companyId={companyId} value={runtime} onChange={setRuntime} />
       <select className={inputClass} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} aria-label="Phòng ban">
         <option value="">— Không thuộc phòng ban —</option>
         {departments.data?.map((d) => (

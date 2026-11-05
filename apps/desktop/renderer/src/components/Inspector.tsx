@@ -1,3 +1,4 @@
+import type { AgentDetail } from "@orchestra/contracts";
 import { useState } from "react";
 import {
   fetchArtifactText,
@@ -10,6 +11,8 @@ import {
   type AgentAction,
 } from "../api/hooks";
 import { errorMessage } from "../api/client";
+import { useCreateAgentVersion } from "../api/hooks-p1";
+import { RuntimeSettingsForm, type RuntimeChoice } from "./RuntimeSettingsForm";
 import { useArtifactToKnowledge, usePauseRun, useResumeRun } from "../api/hooks-p2";
 import { describeEvent } from "../live/eventLog";
 import { useSelection, type Selection } from "../state/selection";
@@ -75,6 +78,7 @@ function AgentInspector({ companyId, agentId }: { companyId: string; agentId: st
       </div>
       {action.isError && <ErrorView error={action.error} />}
       <PlacementPanel companyId={companyId} agent={a} />
+      <RuntimePanel key={`rt-${a.current_version_id ?? "none"}`} companyId={companyId} agent={a} />
       <DefinitionPanel key={a.current_version_id ?? "none"} companyId={companyId} agent={a} />
       {a.current_version && (
         <p className="text-xs text-slate-400">
@@ -146,6 +150,7 @@ function RunInspector({ companyId, runId }: { companyId: string; runId: string }
           Bắt đầu {formatTime(r.started_at)} · Kết thúc {formatTime(r.finished_at)}
         </div>
       </div>
+      {r.usage_json && <UsageLine usage={r.usage_json} />}
       {r.result_summary && (
         <div className="p-2 rounded bg-emerald-950/40 border border-emerald-900">{r.result_summary}</div>
       )}
@@ -201,6 +206,65 @@ function RunInspector({ companyId, runId }: { companyId: string; runId: string }
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function RuntimePanel({ companyId, agent }: { companyId: string; agent: AgentDetail }) {
+  const current = agent.current_version;
+  const create = useCreateAgentVersion(companyId, agent.id);
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState<RuntimeChoice>({
+    runtime_id: current?.runtime.runtime_id ?? "mock",
+    settings: (current?.runtime.settings as Record<string, unknown>) ?? {},
+  });
+  if (!current || agent.status === "archived") return null;
+  const s = (current.runtime.settings ?? {}) as Record<string, unknown>;
+  return (
+    <div>
+      <div className="text-xs uppercase text-slate-500 mb-1">Runtime & model</div>
+      {!editing ? (
+        <div className="text-xs text-slate-300">
+          {current.runtime.runtime_id}
+          {s.model ? ` · ${String(s.model)}` : ""}
+          {s.effort ? ` · effort ${String(s.effort)}` : ""}
+          <button className="ml-2 underline text-indigo-300" onClick={() => setEditing(true)}>
+            Đổi
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <RuntimeSettingsForm companyId={companyId} value={value} onChange={setValue} />
+          <div className="flex gap-2">
+            <SecondaryButton
+              disabled={create.isPending}
+              onClick={() =>
+                create.mutate(
+                  { definition: { ...current.definition, instructions: current.definition.instructions ?? "" }, runtime: value },
+                  { onSuccess: () => setEditing(false) },
+                )
+              }
+            >
+              Lưu thành v{current.version_number + 1}
+            </SecondaryButton>
+            <SecondaryButton onClick={() => setEditing(false)}>Hủy</SecondaryButton>
+          </div>
+          {create.isError && <ErrorView error={create.error} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UsageLine({ usage }: { usage: Record<string, unknown> }) {
+  const n = (k: string) => Number(usage[k] ?? 0).toLocaleString("vi-VN");
+  const cost =
+    typeof usage.cost_usd === "number"
+      ? `~${(usage.cost_usd as number).toFixed(4)} USD (ước tính${usage.cost_source === "local_no_api_fee" ? ", không phí API" : ""})`
+      : "chưa có giá";
+  return (
+    <div className="text-xs text-slate-400" data-testid="run-usage">
+      {String(usage.model ?? "")}: {n("input_tokens")} token vào · {n("output_tokens")} token ra · {n("model_calls")} lượt gọi · {cost}
     </div>
   );
 }

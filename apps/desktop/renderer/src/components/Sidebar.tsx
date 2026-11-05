@@ -10,7 +10,8 @@ const NAV: { view: View; label: string; phase?: string }[] = [
   { view: "capabilities", label: "Skills & Tools" },
   { view: "approvals", label: "Phê duyệt" },
   { view: "knowledge", label: "Tri thức" },
-  { view: "analytics", label: "Phân tích", phase: "P4" },
+  { view: "analytics", label: "Hiệu suất (KPI)" },
+  { view: "connections", label: "Kết nối & model" },
 ];
 
 export function Sidebar({ companies }: { companies: Company[] }) {

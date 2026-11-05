@@ -40,7 +40,7 @@ describe("mergeEvents", () => {
 
 describe("queriesToRefresh", () => {
   it("refreshes runs and the specific run for run events", () => {
-    expect(queriesToRefresh(ev(1, "agent.run.completed"))).toEqual([["runs", "c1"], ["run", "r1"], ["runEvents", "r1"]]);
+    expect(queriesToRefresh(ev(1, "agent.run.completed"))).toEqual([["kpis", "c1"], ["runs", "c1"], ["run", "r1"], ["runEvents", "r1"]]);
   });
   it("refreshes agent caches for agent events but not run events", () => {
     const keys = queriesToRefresh(ev(1, "agent.activated", { run_id: null, payload: { agent_id: "a1" } }));
@@ -71,5 +71,24 @@ describe("P2/P3 events", () => {
   it("describes approvals and tool calls", () => {
     expect(describeEvent(ev(1, "approval.requested", { payload: { action_type: "tool:social.publish" } }))).toContain("social.publish");
     expect(describeEvent(ev(1, "tool.call_denied", { payload: { tool_key: "x", error_code: "TOOL_DENIED", reason: "deny_not_granted" } }))).toContain("TOOL_DENIED");
+  });
+});
+
+describe("P4 events", () => {
+  it("describes usage with an estimated cost and refreshes KPIs", () => {
+    const e = ev(1, "agent.run.usage_recorded", {
+      payload: { run_id: "r1", model: "claude-opus-5-5", input_tokens: 11, output_tokens: 7, cost_usd: 0.000184 },
+    });
+    expect(describeEvent(e)).toBe("claude-opus-5-5: 11 token vào, 7 token ra · ~0.0002 USD (ước tính)");
+    expect(queriesToRefresh(e)).toContainEqual(["kpis", "c1"]);
+    const unpriced = ev(2, "agent.run.usage_recorded", {
+      payload: { run_id: "r1", model: "gpt-x", input_tokens: 1, output_tokens: 2, cost_usd: null },
+    });
+    expect(describeEvent(unpriced)).toContain("chưa có giá");
+  });
+  it("credential events refresh the credential list and never need the secret", () => {
+    const e = ev(3, "credential.revoked", { run_id: null, payload: { label: "Key", provider: "anthropic" } });
+    expect(describeEvent(e)).toBe('Thu hồi credential "Key"');
+    expect(queriesToRefresh(e)).toContainEqual(["credentials"]);
   });
 });

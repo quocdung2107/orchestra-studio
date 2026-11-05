@@ -1,7 +1,7 @@
 # P4 PLAN — KPI & Multi-Runtime
 
 **Version:** 0.1 · **Date:** 2026-11-05
-**Trạng thái:** Dung yêu cầu "tiếp tục" sau khi nhận P2+P3 (2026-11-05). ADR 0021–0024 áp dụng theo đề xuất bên dưới; Dung có thể đổi bất kỳ quyết định nào.
+**Trạng thái:** Dung yêu cầu "tiếp tục" sau khi nhận P2+P3 (2026-11-05). ADR 0021–0024 áp dụng theo đề xuất bên dưới; Dung có thể đổi bất kỳ quyết định nào. Q1–Q8 xong trên `main` (2026-11-05); còn Q9 kiểm tra trên Windows.
 **Phạm vi gốc:** `IMPLEMENTATION_PLAN.md` §2 (P4) và §5 (tiêu chí nghiệm thu P4), `RUNTIME.md` §3, §7, §8, `SECURITY.md` §6, `DATABASE.md` (metrics, credential_refs).
 
 ## 0. Mục tiêu và tiêu chí nghiệm thu

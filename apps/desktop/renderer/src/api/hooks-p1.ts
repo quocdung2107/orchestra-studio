@@ -117,7 +117,10 @@ export function useUpdateCompany(cid: string) {
 export function useCreateAgentVersion(cid: string, agentId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { definition: { instructions: string; goals?: string[] }; runtime: { runtime_id: string } }) =>
+    mutationFn: async (body: {
+      definition: { instructions: string; goals?: string[] };
+      runtime: { runtime_id: string; settings?: Record<string, unknown> };
+    }) =>
       unwrap(await api.POST("/api/v1/agents/{agent_id}/versions", { ...pa(agentId), body })),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.agent(agentId) });

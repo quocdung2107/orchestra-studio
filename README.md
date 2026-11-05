@@ -120,13 +120,25 @@ pnpm test        # gồm kiểm tra openapi.json còn khớp với backend
 8. Tri thức: tìm không dấu ("thong diep"), sửa ghi chú tăng version; tab Bài học duyệt bài học của Thư ký; tab Đề xuất đổi vai trò duyệt để Reviewer báo cáo cho CMO (xem lại Sơ đồ tổ chức).
 9. Đóng app khi đang chờ duyệt, mở lại → yêu cầu chuyển "hết hạn", run báo `INTERRUPTED` (không giả là đã xong).
 
+## P4 acceptance (IMPLEMENTATION_PLAN §5)
+
+1. **Kết nối & model**: thấy 4 runtime (Mock, Ollama, Claude, OpenAI) với capability của từng cái. Ô Ollama hiện trạng thái kết nối, model đã tải (dung lượng, tham số), model đang nạp (RAM/VRAM) và giới hạn chạy đồng thời. Chưa cài Ollama thì báo "Không kết nối được" (không lỗi app).
+2. Thêm credential Anthropic hoặc OpenAI: nhập key (lưu vào Windows Credential Manager, mục `orchestra-studio`) hoặc tên biến môi trường. Key không bao giờ hiện lại; bấm "Kiểm tra" để gọi thử provider (liệt kê model, không tốn token). Có "Xoay key" và "Thu hồi".
+3. Agents → chọn một agent → "Runtime & model" → "Đổi": chọn Claude + credential (mặc định `claude-opus-5-5`, effort `medium`), hoặc Ollama + model đã tải. Lưu tạo phiên bản agent mới. Thiếu credential hoặc thêm khóa kiểu `api_key` vào settings sẽ bị từ chối.
+4. Tasks & Runs → "+ Tạo task" giao cho agent đó. Agent gọi model thật, có thể dùng tool đã được cấp (qua Tool Gateway, L3 vẫn chờ duyệt); kết quả thành artifact Markdown. Inspector run hiện token vào/ra và chi phí **ước tính**. Run model thật hủy được, không có tạm dừng.
+5. **Hiệu suất (KPI)**: số run, tỉ lệ thành công, retry, thời gian trung bình, token, chi phí ước tính theo company, agent và runtime. Mỗi số ghi nguồn và độ tin cậy; model không có trong bảng giá (`apps/backend/src/orchestra_backend/metrics/pricing.yaml`) hiện "chưa có giá" thay vì đoán.
+6. Thu hồi credential khi agent còn dùng → run tiếp theo thất bại ngay với `CREDENTIAL_REVOKED`, không gọi provider.
+
+Lưu ý chi phí: gọi Claude/OpenAI tính tiền theo token. Mock vẫn là mặc định; mỗi run có giới hạn số lượt gọi model (`max_turns`, mặc định 8) và `max_tokens`.
+
 ## Giới hạn hiện tại (có chủ đích)
 
-- Chỉ có Mock Runtime (L0). Ollama/Claude/OpenAI ở P4.
+- Agent chạy bằng model thật chưa tự giao việc cho agent khác (chỉ Mock làm được); để P5.
+- Model thật: không streaming, không tạm dừng/tiếp tục giữa chừng (chỉ hủy).
+- Bảng giá là file tĩnh có ngày; chi phí là ước tính, không phải hóa đơn. Chưa có giá OpenAI.
 - Tool tích hợp: `kb.search`, `doc.draft`, `workspace.write` (chỉ ghi trong `data/workspaces/<company>/<task>/`), `social.publish` (**mô phỏng**, không gọi mạng). Kết nối thật ở P4/P5 (ADR-0018).
 - Tạm dừng một run chỉ dừng bước của chính run đó; task con đang chạy vẫn chạy tiếp.
-- Tìm kiếm tri thức là full-text (SQLite FTS5), chưa có tìm theo ngữ nghĩa (P4).
-- Chưa có pause/resume/cancel: runtime mock không hỗ trợ nên UI không hiển thị nút.
+- Tìm kiếm tri thức là full-text (SQLite FTS5), chưa có tìm theo ngữ nghĩa.
 - App desktop chạy từ mã nguồn và cần `uv`; chưa có bản cài đặt (cần ADR riêng).
 
 ## Quy trình làm việc
