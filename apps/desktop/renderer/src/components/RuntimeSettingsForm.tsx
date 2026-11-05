@@ -1,5 +1,6 @@
 import { useRuntimes } from "../api/hooks";
 import { useCredentials, useRuntimeHealth } from "../api/hooks-p4";
+import { useWorkers } from "../api/hooks-p5";
 import { inputClass } from "./ui";
 
 export type RuntimeChoice = { runtime_id: string; settings: Record<string, unknown> };
@@ -11,10 +12,13 @@ export function RuntimeSettingsForm({
   value,
   onChange,
   companyId,
+  only,
 }: {
   value: RuntimeChoice;
   onChange: (v: RuntimeChoice) => void;
   companyId: string;
+  /** Restrict the runtime list (used for what a worker may run). */
+  only?: string[];
 }) {
   const runtimes = useRuntimes();
   const creds = useCredentials();
@@ -40,13 +44,16 @@ export function RuntimeSettingsForm({
         value={value.runtime_id}
         onChange={(e) => onChange({ runtime_id: e.target.value, settings: {} })}
       >
-        {runtimes.data?.map((r) => (
-          <option key={r.runtime_id} value={r.runtime_id}>
-            {r.display_name}
-          </option>
-        ))}
+        {runtimes.data
+          ?.filter((r) => !only || only.includes(r.runtime_id))
+          .map((r) => (
+            <option key={r.runtime_id} value={r.runtime_id}>
+              {r.display_name}
+            </option>
+          ))}
       </select>
       {value.runtime_id === "mock" && <p className="text-xs text-slate-500">Mock: chạy theo kịch bản, không gọi AI, không tốn phí.</p>}
+      {value.runtime_id === "worker" && <WorkerFields value={value} onChange={onChange} companyId={companyId} />}
 
       {rt?.requires_credential && (
         <>
@@ -64,7 +71,7 @@ export function RuntimeSettingsForm({
         </>
       )}
 
-      {value.runtime_id !== "mock" && (
+      {value.runtime_id !== "mock" && value.runtime_id !== "worker" && (
         <>
           {value.runtime_id === "ollama" && (ollama.data?.models?.length ?? 0) > 0 ? (
             <select className={inputClass} aria-label="Model" value={String(s.model ?? "")} onChange={(e) => set("model", e.target.value)}>
@@ -132,6 +139,46 @@ export function RuntimeSettingsForm({
           </p>
         </>
       )}
+    </div>
+  );
+}
+
+/** Settings for runtime "worker": which worker, and what it runs (mock or ollama, ADR-0025). */
+function WorkerFields({ value, onChange, companyId }: { value: RuntimeChoice; onChange: (v: RuntimeChoice) => void; companyId: string }) {
+  const workers = useWorkers();
+  const s = value.settings;
+  const inner: RuntimeChoice = {
+    runtime_id: String(s.runtime ?? "mock"),
+    settings: (s.settings as Record<string, unknown>) ?? {},
+  };
+  const active = (workers.data ?? []).filter((w) => w.status === "active");
+  const update = (patch: Record<string, unknown>) => {
+    const next: Record<string, unknown> = { runtime: inner.runtime_id, settings: inner.settings, ...s, ...patch };
+    if (!next.worker_id) delete next.worker_id;
+    onChange({ ...value, settings: next });
+  };
+  return (
+    <div className="space-y-2 border-l border-slate-700 pl-3">
+      <select
+        className={inputClass}
+        aria-label="Worker"
+        value={String(s.worker_id ?? "")}
+        onChange={(e) => update({ worker_id: e.target.value || undefined })}
+      >
+        <option value="">Worker bất kỳ đang kết nối</option>
+        {active.map((w) => (
+          <option key={w.id} value={w.id}>
+            {w.name} {w.online ? "" : "(không kết nối)"}
+          </option>
+        ))}
+      </select>
+      {active.length === 0 && <p className="text-xs text-amber-300">Chưa có worker. Ghép nối ở mục "Workers".</p>}
+      <RuntimeSettingsForm
+        companyId={companyId}
+        only={["mock", "ollama"]}
+        value={inner}
+        onChange={(v) => update({ runtime: v.runtime_id, settings: v.settings })}
+      />
     </div>
   );
 }

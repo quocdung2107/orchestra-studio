@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     ollama_max_concurrency: int = Field(default=1, ge=1, le=8)
     # Network timeout (seconds) for one model call.
     model_timeout_s: float = 300.0
+    # Workers (ADR-0025).
+    worker_lease_ttl_s: float = Field(default=30.0, gt=0)
+    worker_token_ttl_s: float = Field(default=900.0, gt=0)
+    worker_pairing_ttl_s: float = Field(default=900.0, gt=0)
+    worker_dispatch_timeout_s: float = Field(default=300.0, gt=0)
+    worker_poll_max_s: float = Field(default=25.0, ge=0)
 
     @cached_property
     def api_token(self) -> str:

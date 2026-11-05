@@ -25,3 +25,9 @@ from orchestra_backend.knowledge.models import (  # noqa: F401
 )
 from orchestra_backend.metrics.models import Metric  # noqa: F401
 from orchestra_backend.organization.models import Department, OrgLayout  # noqa: F401
+from orchestra_backend.workers.models import (  # noqa: F401
+    Worker,
+    WorkerLease,
+    WorkerPairing,
+    WorkerToken,
+)

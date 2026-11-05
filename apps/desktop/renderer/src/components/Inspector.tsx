@@ -226,7 +226,11 @@ function RuntimePanel({ companyId, agent }: { companyId: string; agent: AgentDet
       {!editing ? (
         <div className="text-xs text-slate-300">
           {current.runtime.runtime_id}
+          {s.runtime ? ` → ${String(s.runtime)}` : ""}
           {s.model ? ` · ${String(s.model)}` : ""}
+          {(s.settings as Record<string, unknown> | undefined)?.model
+            ? ` · ${String((s.settings as Record<string, unknown>).model)}`
+            : ""}
           {s.effort ? ` · effort ${String(s.effort)}` : ""}
           <button className="ml-2 underline text-indigo-300" onClick={() => setEditing(true)}>
             Đổi

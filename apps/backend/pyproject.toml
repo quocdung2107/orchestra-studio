@@ -19,6 +19,7 @@ dependencies = [
 
 [project.scripts]
 orchestra-backend = "orchestra_backend.__main__:main"
+orchestra-worker = "orchestra_backend.worker_client.__main__:main"
 
 [dependency-groups]
 dev = [

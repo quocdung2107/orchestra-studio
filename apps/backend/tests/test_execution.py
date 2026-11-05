@@ -42,7 +42,7 @@ def test_scenarios_are_valid() -> None:
 
 def test_runtimes_listed_with_capabilities(client: TestClient) -> None:
     rts = {r["runtime_id"]: r for r in client.get("/api/v1/runtimes").json()}
-    assert set(rts) == {"mock", "ollama", "anthropic", "openai"}
+    assert set(rts) == {"mock", "ollama", "anthropic", "openai", "worker"}
     assert rts["mock"]["capabilities"]["supports_pause"] is True
     assert rts["anthropic"]["capabilities"]["supports_pause"] is False
     assert rts["anthropic"]["capabilities"]["supports_cancel"] is True

@@ -23,6 +23,8 @@ from orchestra_backend.api import (
     organization,
     stream,
     templates,
+    worker_protocol,
+    workers,
 )
 from orchestra_backend.api.deps import Container
 from orchestra_backend.core.config import Settings
@@ -38,6 +40,8 @@ from orchestra_backend.runtime.llm.ollama_rt import OllamaRuntime
 from orchestra_backend.runtime.llm.openai_rt import OpenAIRuntime
 from orchestra_backend.runtime.mock.runtime import MockRuntime
 from orchestra_backend.runtime.registry import RuntimeRegistry
+from orchestra_backend.runtime.worker_rt import WorkerRuntime
+from orchestra_backend.workers.hub import WorkerHub
 
 log = logging.getLogger(__name__)
 
@@ -72,15 +76,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     registry.register(AnthropicRuntime(timeout_s=settings.model_timeout_s))
     registry.register(OpenAIRuntime(timeout_s=settings.model_timeout_s))
+    hub = WorkerHub(container)
+    registry.register(
+        WorkerRuntime(hub, {"mock": registry.get("mock"), "ollama": registry.get("ollama")})
+    )
     orchestrator = Orchestrator(container, registry, secrets)
-    container.extras.update(registry=registry, orchestrator=orchestrator, secrets=secrets)
+    container.extras.update(
+        registry=registry, orchestrator=orchestrator, secrets=secrets, workers=hub
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         _write_token_file(settings)
         await orchestrator.recover()
+        await hub.start()
         yield
         await orchestrator.shutdown()
+        await hub.stop()
         engine.dispose()
 
     app = FastAPI(title="Orchestra Studio API", version=__version__, lifespan=lifespan)
@@ -100,6 +112,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(credentials.router)
     api.include_router(metrics.router)
     api.include_router(backups.router)
+    api.include_router(workers.router)
+    api.include_router(worker_protocol.router)
     api.include_router(templates.router)
     api.include_router(approvals.router)
     api.include_router(knowledge.router)

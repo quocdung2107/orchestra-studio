@@ -131,6 +131,15 @@ pnpm test        # gồm kiểm tra openapi.json còn khớp với backend
 
 Lưu ý chi phí: gọi Claude/OpenAI tính tiền theo token. Mock vẫn là mặc định; mỗi run có giới hạn số lượt gọi model (`max_turns`, mặc định 8) và `max_tokens`.
 
+## Worker (P5)
+
+Worker là tiến trình riêng nhận việc từ app và chạy agent bằng Mock hoặc Ollama (ADR-0025).
+
+1. Mục **Workers** → "Tạo mã ghép nối".
+2. Mở cửa sổ lệnh trong thư mục dự án: `pnpm worker pair <MÃ>` (một lần), rồi `pnpm worker` (để chạy; Ctrl+C để dừng).
+3. Agents → chọn agent → "Runtime & model" → "Đổi" → runtime **Worker**, chọn worker (hoặc bất kỳ) và Mock/Ollama bên trong.
+4. Giao task cho agent đó: run chờ worker nhận, chạy trên worker, kết quả về app như thường. Tắt worker giữa chừng → run thất bại `WORKER_LOST`/`WORKER_STOPPED` (không bao giờ thành "xong"). "Thu hồi" worker → việc đang chạy thất bại, worker không kết nối lại được.
+
 ## Sao lưu & khôi phục (P5)
 
 - Trong app: mục **Sao lưu** → "Tạo bản sao lưu" (hoặc `pnpm backup`). File zip nằm trong `data/backups/`, gồm cơ sở dữ liệu, artifact, workspace; không chứa API key.
@@ -138,6 +147,7 @@ Lưu ý chi phí: gọi Claude/OpenAI tính tiền theo token. Mock vẫn là m�
 
 ## Giới hạn hiện tại (có chủ đích)
 
+- Worker chỉ chạy trên cùng máy (127.0.0.1); chạy qua mạng LAN để sau. Worker chỉ chạy Mock/Ollama.
 - Agent chạy model thật giao việc qua tool `team.delegate` (chỉ cho cấp dưới trực tiếp, tối đa 5 lần mỗi run); các task con chạy lần lượt, không song song.
 - Model thật: không streaming, không tạm dừng/tiếp tục giữa chừng (chỉ hủy).
 - Bảng giá là file tĩnh có ngày; chi phí là ước tính, không phải hóa đơn. Chưa có giá OpenAI.

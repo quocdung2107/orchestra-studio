@@ -41,3 +41,6 @@ export type SecretStoreInfo = S["SecretStoreInfo"];
 export type VerifyResult = S["VerifyResult"];
 export type KpiReport = S["KpiReport"];
 export type KpiFigures = S["KpiFigures"];
+export type WorkerInfo = S["WorkerOut"];
+export type PairingInfo = S["PairingOut"];
+export type Backup = S["BackupOut"];

@@ -15,3 +15,28 @@ export const useCreateBackup = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: keys5.backups }),
   });
 };
+
+// ----- workers (ADR-0025) -----
+
+export const keysWorkers = ["workers"] as const;
+
+export const useWorkers = () =>
+  useQuery({
+    queryKey: keysWorkers,
+    queryFn: async () => unwrap(await api.GET("/api/v1/workers")),
+    refetchInterval: 10_000,
+  });
+
+export const useCreatePairing = () =>
+  useMutation({
+    mutationFn: async (name: string) => unwrap(await api.POST("/api/v1/workers/pairing-codes", { body: { name } })),
+  });
+
+export const useRevokeWorker = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (worker_id: string) =>
+      unwrap(await api.POST("/api/v1/workers/{worker_id}/revoke", { params: { path: { worker_id } } })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keysWorkers }),
+  });
+};
