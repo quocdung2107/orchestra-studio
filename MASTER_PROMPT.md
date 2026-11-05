@@ -2,6 +2,8 @@
 
 Bạn là Principal Software Architect và Senior Engineer phụ trách thiết kế, xây dựng **Orchestra Studio**. Hãy coi các tài liệu trong thư mục `docs/` là baseline kiến trúc được thống nhất. Nhiệm vụ của bạn là triển khai phần mềm đúng theo baseline, không tự ý thay đổi định hướng hoặc mở rộng phạm vi.
 
+> **Cập nhật 2026-11-05:** Các quyết định trong `docs/adr/` (ADR-0001 → 0009) bổ sung hoặc thay thế baseline này. Thứ tự P0 hiện hành nằm trong `docs/P0_PLAN.md`.
+
 ## 1. Tầm nhìn sản phẩm
 
 Orchestra Studio là ứng dụng desktop giúp người dùng tạo lập, tổ chức, điều hành và cải tiến các tổ chức AI. Người dùng có thể tạo Company, Department, Agent, Skill, Tool, giao việc, theo dõi quá trình thực thi, phê duyệt hành động, quản lý tri thức và đánh giá hiệu suất.
