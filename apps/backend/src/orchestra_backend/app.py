@@ -10,11 +10,13 @@ from fastapi.staticfiles import StaticFiles
 from orchestra_backend import __version__
 from orchestra_backend.api import (
     agents,
+    approvals,
     capabilities,
     companies,
     events,
     execution,
     health,
+    knowledge,
     organization,
     stream,
     templates,
@@ -77,6 +79,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(organization.router)
     api.include_router(capabilities.router)
     api.include_router(templates.router)
+    api.include_router(approvals.router)
+    api.include_router(knowledge.router)
     app.include_router(api)
 
     if settings.static_dir and settings.static_dir.is_dir():

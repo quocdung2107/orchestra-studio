@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from orchestra_backend.agents.models import Agent, AgentVersion
-from orchestra_backend.core.errors import NotFoundError
+from orchestra_backend.core.errors import DomainValidationError, InvalidStateError, NotFoundError
 from orchestra_backend.core.time import utcnow
 from orchestra_backend.events.catalog import (
     ArtifactCreated,
@@ -24,12 +24,24 @@ from orchestra_backend.events.catalog import (
     RunProgress,
     RunQueued,
     RunRef,
+    RunRetryScheduled,
+    RunStatusChanged,
     TaskAssigned,
     TaskCreated,
+    TaskDependencyAdded,
+    TaskRef,
     TaskStatusChanged,
 )
 from orchestra_backend.events.service import append_event
-from orchestra_backend.execution.models import RUN_TERMINAL, AgentRun, Artifact, Task
+from orchestra_backend.execution.models import (
+    RUN_TERMINAL,
+    TASK_ACTIVE,
+    TASK_TERMINAL,
+    AgentRun,
+    Artifact,
+    Task,
+    TaskDependency,
+)
 
 SOURCE = "orchestrator"
 
@@ -52,10 +64,14 @@ def create_task(
     company_id: uuid.UUID,
     title: str,
     description: str,
-    required_role: str,
+    required_role: str | None,
     created_by: str,
     parent_task_id: uuid.UUID | None = None,
     correlation_id: uuid.UUID | None = None,
+    assigned_agent_id: uuid.UUID | None = None,
+    max_attempts: int = 1,
+    context: dict | None = None,
+    priority: int = 0,
 ) -> Task:
     task = Task(
         company_id=company_id,
@@ -64,6 +80,9 @@ def create_task(
         required_role=required_role,
         created_by=created_by,
         parent_task_id=parent_task_id,
+        max_attempts=max_attempts,
+        context_json=dict(context or {}),
+        priority=priority,
     )
     session.add(task)
     session.flush()
@@ -75,7 +94,16 @@ def create_task(
         payload=TaskCreated(task_id=task.id, title=title, parent_task_id=parent_task_id),
         correlation_id=correlation_id,
     )
-    agent = find_agent_for_role(session, company_id, required_role)
+    if assigned_agent_id is not None:
+        agent = session.get(Agent, assigned_agent_id)
+        if agent is None or agent.company_id != company_id:
+            raise DomainValidationError("Assigned agent not found in this company")
+        if agent.status == "archived":
+            raise InvalidStateError("Assigned agent is archived")
+    elif required_role:
+        agent = find_agent_for_role(session, company_id, required_role)
+    else:
+        raise DomainValidationError("Task needs an assigned agent or a required role")
     if agent is not None:
         task.assigned_agent_id = agent.id
         append_event(
@@ -96,8 +124,7 @@ def set_task_status(
         return
     from_status = task.status
     task.status = to_status
-    if to_status in {"completed", "failed"}:
-        task.completed_at = utcnow()
+    task.completed_at = utcnow() if to_status in TASK_TERMINAL else None
     append_event(
         session,
         company_id=task.company_id,
@@ -106,6 +133,106 @@ def set_task_status(
         payload=TaskStatusChanged(task_id=task.id, from_status=from_status, to_status=to_status),
         correlation_id=correlation_id,
     )
+
+
+def add_dependency(
+    session: Session, task: Task, depends_on_id: uuid.UUID, correlation_id: uuid.UUID | None = None
+) -> None:
+    """finish_to_start dependency between root tasks; rejects cycles (ADR-0015)."""
+    if depends_on_id == task.id:
+        raise DomainValidationError("A task cannot depend on itself", code="task_cycle")
+    dep = get_task(session, depends_on_id)
+    if dep.company_id != task.company_id:
+        raise DomainValidationError(
+            "Dependency belongs to another company", code="cross_company_link"
+        )
+    if task.parent_task_id is not None or dep.parent_task_id is not None:
+        raise DomainValidationError("Dependencies are only between top-level tasks")
+    if task.status != "pending":
+        raise InvalidStateError("Dependencies can only be added to pending tasks")
+    if session.get(TaskDependency, (task.id, dep.id)) is not None:
+        return
+    # Cycle check: walk what `dep` depends on; reaching `task` means a loop.
+    seen: set[uuid.UUID] = set()
+    stack = [dep.id]
+    while stack:
+        cur = stack.pop()
+        if cur == task.id:
+            raise DomainValidationError("Dependency would create a cycle", code="task_cycle")
+        if cur in seen:
+            continue
+        seen.add(cur)
+        stack.extend(
+            session.scalars(
+                select(TaskDependency.depends_on_task_id).where(TaskDependency.task_id == cur)
+            )
+        )
+    session.add(TaskDependency(task_id=task.id, depends_on_task_id=dep.id))
+    session.flush()
+    append_event(
+        session,
+        company_id=task.company_id,
+        event_type="task.dependency_added",
+        source="api.tasks",
+        payload=TaskDependencyAdded(task_id=task.id, depends_on_task_id=dep.id),
+        correlation_id=correlation_id,
+    )
+
+
+def dependencies_of(session: Session, task_id: uuid.UUID) -> list[Task]:
+    return list(
+        session.scalars(
+            select(Task)
+            .join(TaskDependency, TaskDependency.depends_on_task_id == Task.id)
+            .where(TaskDependency.task_id == task_id)
+        )
+    )
+
+
+def ready_root_tasks(session: Session, company_id: uuid.UUID) -> list[Task]:
+    """Pending top-level tasks whose dependencies all completed (ADR-0015)."""
+    pending = session.scalars(
+        select(Task)
+        .where(
+            Task.company_id == company_id,
+            Task.status == "pending",
+            Task.parent_task_id.is_(None),
+        )
+        .order_by(Task.priority.desc(), Task.created_at)
+    )
+    return [
+        t for t in pending if all(d.status == "completed" for d in dependencies_of(session, t.id))
+    ]
+
+
+def descendants(session: Session, task: Task) -> list[Task]:
+    out: list[Task] = []
+    frontier = [task.id]
+    while frontier:
+        children = list(session.scalars(select(Task).where(Task.parent_task_id.in_(frontier))))
+        out.extend(children)
+        frontier = [c.id for c in children]
+    return out
+
+
+def request_retry(session: Session, task: Task) -> None:
+    if task.parent_task_id is not None:
+        raise InvalidStateError("Only top-level tasks can be retried; retry the parent instead")
+    if task.status not in {"failed", "cancelled"}:
+        raise InvalidStateError("Only failed or cancelled tasks can be retried")
+    agent = session.get(Agent, task.assigned_agent_id) if task.assigned_agent_id else None
+    if (agent is None or agent.status != "active") and task.required_role:
+        agent = find_agent_for_role(session, task.company_id, task.required_role)
+        if agent is not None:
+            task.assigned_agent_id = agent.id
+    append_event(
+        session,
+        company_id=task.company_id,
+        event_type="task.retry_requested",
+        source="api.tasks",
+        payload=TaskRef(task_id=task.id),
+    )
+    set_task_status(session, task, "pending")
 
 
 def get_task(session: Session, task_id: uuid.UUID) -> Task:
@@ -125,7 +252,12 @@ def list_tasks(session: Session, company_id: uuid.UUID) -> list[Task]:
 
 
 def create_run(
-    session: Session, task: Task, agent: Agent, input_json: dict, correlation_id: uuid.UUID | None
+    session: Session,
+    task: Task,
+    agent: Agent,
+    input_json: dict,
+    correlation_id: uuid.UUID | None,
+    attempt: int = 1,
 ) -> AgentRun:
     version = session.get(AgentVersion, agent.current_version_id)
     assert version is not None  # active agents always have a version (agents.service)
@@ -137,6 +269,7 @@ def create_run(
         task_id=task.id,
         runtime_id=runtime_id,
         input_json=input_json,
+        attempt=attempt,
     )
     session.add(run)
     session.flush()
@@ -241,6 +374,79 @@ def record_delegation(
     )
 
 
+def set_run_status(
+    session: Session,
+    run: AgentRun,
+    to_status: str,
+    correlation_id: uuid.UUID | None = None,
+    source: str = SOURCE,
+) -> None:
+    """Non-terminal transitions: running <-> paused/waiting_approval, cancel_requested."""
+    if run.status == to_status or run.status in RUN_TERMINAL:
+        return
+    from_status = run.status
+    run.status = to_status
+    append_event(
+        session,
+        company_id=run.company_id,
+        event_type="agent.run.status_changed",
+        source=source,
+        run_id=run.id,
+        correlation_id=correlation_id,
+        payload=RunStatusChanged(run_id=run.id, from_status=from_status, to_status=to_status),
+    )
+    task = session.get(Task, run.task_id) if run.task_id else None
+    if task is not None and task.status in TASK_ACTIVE:
+        mapped = {"running": "in_progress", "cancel_requested": task.status}.get(
+            to_status, to_status
+        )
+        if mapped in TASK_ACTIVE:
+            set_task_status(session, task, mapped, correlation_id)
+
+
+def cancel_run_record(
+    session: Session, run: AgentRun, correlation_id: uuid.UUID | None = None, source: str = SOURCE
+) -> None:
+    if run.status in RUN_TERMINAL:
+        return
+    run.status = "cancelled"
+    run.finished_at = utcnow()
+    run.error_code = "CANCELLED"
+    run.error_summary = "Cancelled by user"
+    append_event(
+        session,
+        company_id=run.company_id,
+        event_type="agent.run.cancelled",
+        source=source,
+        run_id=run.id,
+        correlation_id=correlation_id,
+        payload=RunRef(run_id=run.id),
+    )
+    task = session.get(Task, run.task_id) if run.task_id else None
+    if task is not None:
+        set_task_status(session, task, "cancelled", correlation_id)
+
+
+def record_retry_scheduled(
+    session: Session, run: AgentRun, delay_ms: int, correlation_id: uuid.UUID | None
+) -> None:
+    assert run.task_id is not None
+    append_event(
+        session,
+        company_id=run.company_id,
+        event_type="agent.run.retry_scheduled",
+        source=SOURCE,
+        run_id=run.id,
+        correlation_id=correlation_id,
+        payload=RunRetryScheduled(
+            task_id=run.task_id,
+            failed_run_id=run.id,
+            next_attempt=run.attempt + 1,
+            delay_ms=delay_ms,
+        ),
+    )
+
+
 def finish_run(
     session: Session,
     run: AgentRun,
@@ -249,9 +455,12 @@ def finish_run(
     summary: str = "",
     error_code: str = "",
     error_summary: str = "",
+    retryable: bool = False,
     correlation_id: uuid.UUID | None = None,
     source: str | None = None,
+    final: bool = True,
 ) -> None:
+    """`final=False` keeps the task active because another attempt follows (ADR-0016)."""
     if run.status in RUN_TERMINAL:
         return
     run.finished_at = utcnow()
@@ -279,9 +488,14 @@ def finish_run(
             source=source or _source(run),
             run_id=run.id,
             correlation_id=correlation_id,
-            payload=RunFailed(run_id=run.id, error_code=error_code, error_summary=error_summary),
+            payload=RunFailed(
+                run_id=run.id,
+                error_code=error_code,
+                error_summary=error_summary,
+                retryable=retryable,
+            ),
         )
-    if task is not None:
+    if task is not None and final:
         set_task_status(session, task, "completed" if ok else "failed", correlation_id)
 
 
@@ -379,7 +593,7 @@ def fail_interrupted_runs(session: Session) -> int:
             error_summary="Backend stopped while the run was in progress",
             source="orchestrator.recovery",
         )
-    # Tasks left in progress without a live run (e.g. parents) are failed too.
-    for task in session.scalars(select(Task).where(Task.status == "in_progress")):
+    # Tasks left active without a live run (e.g. parents) are failed too.
+    for task in session.scalars(select(Task).where(Task.status.in_(TASK_ACTIVE))):
         set_task_status(session, task, "failed")
     return len(runs)

@@ -10,13 +10,32 @@ from sqlalchemy.orm import Mapped, mapped_column
 from orchestra_backend.core.time import utcnow
 from orchestra_backend.db.base import Base, IdMixin, TimestampMixin
 
-TASK_STATUSES = ("pending", "in_progress", "completed", "failed")
-RUN_STATUSES = ("queued", "running", "completed", "failed")
-RUN_TERMINAL = {"completed", "failed"}
+TASK_STATUSES = (
+    "pending",
+    "in_progress",
+    "waiting_approval",
+    "paused",
+    "completed",
+    "failed",
+    "cancelled",
+)
+TASK_TERMINAL = {"completed", "failed", "cancelled"}
+TASK_ACTIVE = {"in_progress", "waiting_approval", "paused"}
+RUN_STATUSES = (
+    "queued",
+    "running",
+    "waiting_approval",
+    "paused",
+    "cancel_requested",
+    "completed",
+    "failed",
+    "cancelled",
+)
+RUN_TERMINAL = {"completed", "failed", "cancelled"}
 
 
 class Task(IdMixin, TimestampMixin, Base):
-    """Minimal P0 task (ADR-0004): no dependencies, no parallelism."""
+    """Unit of work (ADR-0004, ADR-0015). Root tasks are scheduled; children run inside parents."""
 
     __tablename__ = "tasks"
     __table_args__ = (
@@ -35,7 +54,21 @@ class Task(IdMixin, TimestampMixin, Base):
     required_role: Mapped[str | None] = mapped_column(String(100), default=None)
     status: Mapped[str] = mapped_column(String(20), default="pending")
     priority: Mapped[int] = mapped_column(default=0)
+    max_attempts: Mapped[int] = mapped_column(default=1)
+    context_json: Mapped[dict[str, Any]] = mapped_column(default=dict)
     completed_at: Mapped[datetime | None] = mapped_column(default=None)
+
+
+class TaskDependency(Base):
+    """finish_to_start: task_id may start only after depends_on_task_id completed (ADR-0015)."""
+
+    __tablename__ = "task_dependencies"
+    __table_args__ = (Index("ix_task_dependencies_depends_on", "depends_on_task_id"),)
+
+    task_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tasks.id"), primary_key=True)
+    depends_on_task_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tasks.id"), primary_key=True)
+    dependency_type: Mapped[str] = mapped_column(String(30), default="finish_to_start")
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
 class AgentRun(IdMixin, Base):
@@ -53,6 +86,7 @@ class AgentRun(IdMixin, Base):
     agent_version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_versions.id"))
     task_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tasks.id"), default=None)
     runtime_id: Mapped[str] = mapped_column(String(50))
+    attempt: Mapped[int] = mapped_column(default=1)
     worker_id: Mapped[str | None] = mapped_column(String(100), default=None)
     status: Mapped[str] = mapped_column(String(20), default="queued")
     created_at: Mapped[datetime] = mapped_column(default=utcnow)

@@ -15,7 +15,9 @@ BASE_URL = "http://127.0.0.1:8765"
 
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
-    return Settings(data_dir=tmp_path / "data", token=TOKEN, port=8765, mock_step_delay_ms=0)
+    return Settings(
+        data_dir=tmp_path / "data", token=TOKEN, port=8765, mock_step_delay_ms=0, retry_backoff_ms=0
+    )
 
 
 @pytest.fixture

@@ -27,11 +27,27 @@ class RuntimeCapabilities:
 
 
 @dataclass(frozen=True)
+class ToolResult:
+    ok: bool
+    data: dict[str, Any] = field(default_factory=dict)
+    error_code: str | None = None
+    error_summary: str | None = None
+
+
+class ToolPort(Protocol):
+    """The only way a runtime can use a tool (ADR-0018). Policy is enforced behind it."""
+
+    async def call(self, tool_key: str, params: dict[str, Any]) -> ToolResult: ...
+
+
+@dataclass(frozen=True)
 class RunRequest:
     run_id: uuid.UUID
     agent: dict[str, Any]  # name, role, definition (provider-neutral)
     task: dict[str, Any]  # id, title, description
     context: dict[str, Any] = field(default_factory=dict)
+    attempt: int = 1
+    tools: ToolPort | None = None
 
 
 @dataclass(frozen=True)
@@ -48,3 +64,13 @@ class AgentRuntime(Protocol):
     def execute(self, request: RunRequest) -> AsyncIterator[RuntimeEvent]: ...
 
     async def health_check(self) -> dict[str, Any]: ...
+
+
+class ControllableRuntime(Protocol):
+    """Implemented only when the matching capability flag is true (ADR-0017)."""
+
+    def cancel(self, run_id: uuid.UUID) -> None: ...
+
+    def pause(self, run_id: uuid.UUID) -> None: ...
+
+    def resume(self, run_id: uuid.UUID) -> None: ...

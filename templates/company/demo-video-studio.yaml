@@ -6,11 +6,12 @@ description: "8 agent sản xuất video, chạy bằng Mock Runtime. Có phòng
 company:
   name: Demo Video Studio
   description: "Tổ chức mẫu chạy bằng Mock Runtime (không gọi AI, không cần API key)."
-  max_tool_level: 2
+  # L3 cho phép hành động bên ngoài, nhưng luôn cần người duyệt (ADR-0013, ADR-0018).
+  max_tool_level: 3
 departments:
   - {key: exec, name: Ban điều hành}
   - {key: marketing, name: Marketing, parent: exec, max_tool_level: 1}
-  - {key: production, name: Sản xuất, parent: exec}
+  - {key: production, name: Sản xuất, parent: exec, max_tool_level: 3}
   - {key: office, name: Văn phòng, parent: exec, max_tool_level: 1}
 skills:
   - name: Nghiên cứu có nguồn
@@ -39,11 +40,19 @@ tools:
     name: Ghi file trong workspace
     description: Ghi file trong thư mục làm việc của task.
     permission_level: 2
+    input_schema:
+      type: object
+      properties: {path: {type: string, maxLength: 200}, content: {type: string}}
+      required: [path, content]
     policy: {allowed_paths: ["workspace/"], timeout_seconds: 30, idempotent: true}
   - key: social.publish
     name: Đăng lên mạng xã hội
     description: Hành động bên ngoài, luôn cần phê duyệt.
     permission_level: 3
+    input_schema:
+      type: object
+      properties: {channel: {type: string}, text: {type: string, maxLength: 2000}}
+      required: [channel, text]
     policy: {network: allowlist, allowed_domains: ["example.social"], requires_approval: true}
 agents:
   - {key: ceo, name: "An (CEO)", role: CEO, department: exec,
@@ -57,10 +66,11 @@ agents:
      reports_to: cmo, instructions: "Đề xuất và so sánh phương án thông điệp.",
      tools: [kb.search, doc.draft]}
   - {key: producer, name: "Em (Producer)", role: Producer, department: production,
-     reports_to: ceo, instructions: "Điều phối sản xuất nội dung.", tools: [workspace.write]}
+     reports_to: ceo, instructions: "Điều phối sản xuất nội dung.",
+     tools: [workspace.write, social.publish]}
   - {key: scriptwriter, name: "Giang (Scriptwriter)", role: Scriptwriter, department: production,
      reports_to: producer, instructions: "Viết kịch bản theo thông điệp.",
-     skills: [Viết kịch bản video], tools: [doc.draft]}
+     skills: [Viết kịch bản video], tools: [doc.draft, workspace.write]}
   - {key: reviewer, name: "Hà (Reviewer)", role: Reviewer, department: production,
      reports_to: producer, instructions: "Duyệt nội dung theo tiêu chí rõ ràng.",
      tools: [kb.search]}

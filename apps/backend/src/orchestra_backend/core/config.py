@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     run_migrations_on_startup: bool = True
     # Mock runtime pacing; tests set 0 for instant, deterministic progression.
     mock_step_delay_ms: int = 400
+    # Base delay for automatic retries; doubles per attempt (ADR-0016).
+    retry_backoff_ms: int = 1000
 
     @cached_property
     def api_token(self) -> str:
@@ -51,6 +53,10 @@ class Settings(BaseSettings):
     @property
     def artifacts_dir(self) -> Path:
         return self.data_dir / "artifacts"
+
+    @property
+    def workspaces_dir(self) -> Path:
+        return self.data_dir / "workspaces"
 
     @property
     def allowed_hosts(self) -> set[str]:

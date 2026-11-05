@@ -30,6 +30,7 @@ class CompanyUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
     max_tool_level: int | None = Field(default=None, ge=0, le=3)
+    max_parallel_runs: int | None = Field(default=None, ge=1, le=10)
 
     @field_validator("name")
     @classmethod
@@ -45,5 +46,6 @@ class CompanyOut(BaseModel):
     description: str
     status: Literal["active", "archived"]
     max_tool_level: int
+    max_parallel_runs: int
     created_at: datetime
     updated_at: datetime

@@ -20,6 +20,7 @@ class Delegate(_Strict):
     role: str
     title: str
     description: str = ""
+    max_attempts: int = Field(default=1, ge=1, le=5)
 
 
 class ArtifactSpec(_Strict):
@@ -31,6 +32,26 @@ class ArtifactSpec(_Strict):
 class FailSpec(_Strict):
     code: str
     message: str
+    retryable: bool = False
+    # Fail only while attempt < until_attempt, then fall through to the next step (retry demo).
+    until_attempt: int | None = Field(default=None, ge=2)
+
+
+class ToolSpec(_Strict):
+    key: str
+    params: dict[str, Any] = Field(default_factory=dict)
+    on_error: Literal["fail", "continue"] = "fail"
+
+
+class LessonSpec(_Strict):
+    title: str
+    lesson: str
+
+
+class RoleChangeSpec(_Strict):
+    target_role: str
+    changes: dict[str, str]
+    rationale: str
 
 
 class Step(_Strict):
@@ -42,6 +63,10 @@ class Step(_Strict):
     artifact: ArtifactSpec | None = None
     complete: str | None = None
     fail: FailSpec | None = None
+    parallel: list[Delegate] | None = None
+    tool: ToolSpec | None = None
+    lesson: LessonSpec | None = None
+    propose_role_change: RoleChangeSpec | None = None
 
     @model_validator(mode="after")
     def _one_action(self) -> Step:
@@ -57,7 +82,7 @@ class RoleScript(_Strict):
     @model_validator(mode="after")
     def _terminal_last(self) -> RoleScript:
         last = self.steps[-1]
-        if last.complete is None and last.fail is None:
+        if last.complete is None and (last.fail is None or last.fail.until_attempt is not None):
             raise ValueError("last step must be 'complete' or 'fail'")
         return self
 
@@ -66,6 +91,7 @@ class Entry(_Strict):
     role: str
     title: str
     description: str = ""
+    max_attempts: int = Field(default=1, ge=1, le=5)
 
 
 class Scenario(_Strict):
@@ -79,9 +105,17 @@ class Scenario(_Strict):
         script = self.roles.get(role)
         if script is not None:
             return script
-        return RoleScript(
-            steps=[Step(progress=f"{role} đang xử lý"), Step(complete=f"{role} đã hoàn thành")]
-        )
+        return default_script(role)
+
+
+def default_script(role: str) -> RoleScript:
+    """Generic mock work for tasks without a scenario script (user-created tasks)."""
+    return RoleScript(
+        steps=[
+            Step(progress=f"{role} đang xử lý (mô phỏng)"),
+            Step(complete=f"{role} đã hoàn thành (mô phỏng, không gọi AI)"),
+        ]
+    )
 
 
 def _load(path: Path) -> Scenario:

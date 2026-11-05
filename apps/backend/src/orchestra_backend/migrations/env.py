@@ -28,8 +28,13 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def include_object(obj, name, type_, reflected, compare_to):  # type: ignore[no-untyped-def]
+    # FTS5 shadow tables are created by raw SQL (ADR-0019), not by the ORM.
+    return not (type_ == "table" and name and name.startswith("knowledge_fts"))
+
+
 def run_migrations_online() -> None:
-    engine = make_engine(_url(), poolclass=pool.NullPool)
+    engine = make_engine(_url(), begin_immediate=False, poolclass=pool.NullPool)
     with engine.connect() as connection:
         sqlite = connection.dialect.name == "sqlite"
         if sqlite:
@@ -38,7 +43,10 @@ def run_migrations_online() -> None:
             connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
             connection.commit()
         context.configure(
-            connection=connection, target_metadata=target_metadata, render_as_batch=True
+            connection=connection,
+            target_metadata=target_metadata,
+            render_as_batch=True,
+            include_object=include_object,
         )
         with context.begin_transaction():
             context.run_migrations()

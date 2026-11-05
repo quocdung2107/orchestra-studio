@@ -43,7 +43,7 @@ def test_scenarios_are_valid() -> None:
 def test_runtimes_listed_with_capabilities(client: TestClient) -> None:
     rts = client.get("/api/v1/runtimes").json()
     assert rts[0]["runtime_id"] == "mock"
-    assert rts[0]["capabilities"]["supports_pause"] is False
+    assert rts[0]["capabilities"]["supports_pause"] is True
 
 
 def test_seed_creates_active_org(client: TestClient) -> None:

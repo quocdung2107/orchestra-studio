@@ -166,6 +166,96 @@ class RunCompleted(RunRef):
 class RunFailed(RunRef):
     error_code: str
     error_summary: str = Field(max_length=2000)
+    retryable: bool = False
+
+
+class RunStatusChanged(RunRef):
+    from_status: str
+    to_status: str
+
+
+class RunRetryScheduled(Payload):
+    task_id: uuid.UUID
+    failed_run_id: uuid.UUID
+    next_attempt: int
+    delay_ms: int
+
+
+class TaskDependencyAdded(Payload):
+    task_id: uuid.UUID
+    depends_on_task_id: uuid.UUID
+
+
+class TaskRef(Payload):
+    task_id: uuid.UUID
+
+
+class ToolCall(Payload):
+    call_id: uuid.UUID
+    run_id: uuid.UUID
+    agent_id: uuid.UUID
+    tool_key: str
+    tool_id: uuid.UUID | None = None
+    permission_level: int | None = None
+
+
+class ToolCallDenied(ToolCall):
+    reason: str
+    error_code: str
+
+
+class ToolCallFinished(ToolCall):
+    ok: bool
+    error_code: str | None = None
+    approval_id: uuid.UUID | None = None
+
+
+class ApprovalRequested(Payload):
+    approval_id: uuid.UUID
+    run_id: uuid.UUID | None
+    task_id: uuid.UUID | None
+    action_type: str
+    checksum: str
+    required_level: int
+
+
+class ApprovalClosed(Payload):
+    approval_id: uuid.UUID
+    status: str
+    decided_by: str | None = None
+
+
+class KnowledgeChanged(Payload):
+    item_id: uuid.UUID
+    title: str
+    kind: str
+    source_type: str
+    source_id: str | None = None
+    version: int
+    content_checksum: str
+
+
+class KnowledgeRef(Payload):
+    item_id: uuid.UUID
+
+
+class LessonProposed(Payload):
+    lesson_id: uuid.UUID
+    title: str
+    proposed_by: str
+
+
+class ReviewDecided(Payload):
+    id: uuid.UUID
+    status: str
+    knowledge_item_id: uuid.UUID | None = None
+
+
+class RoleChangeProposed(Payload):
+    proposal_id: uuid.UUID
+    agent_id: uuid.UUID
+    changes: dict[str, Any]
+    proposed_by: str
 
 
 class ArtifactCreated(Payload):
@@ -216,6 +306,25 @@ CATALOG: dict[str, type[Payload]] = {
     "agent.run.delegated": RunDelegated,
     "agent.run.completed": RunCompleted,
     "agent.run.failed": RunFailed,
+    "agent.run.status_changed": RunStatusChanged,
+    "agent.run.cancelled": RunRef,
+    "agent.run.retry_scheduled": RunRetryScheduled,
+    "task.dependency_added": TaskDependencyAdded,
+    "task.retry_requested": TaskRef,
+    "task.cancel_requested": TaskRef,
+    "tool.call_requested": ToolCall,
+    "tool.call_denied": ToolCallDenied,
+    "tool.call_finished": ToolCallFinished,
+    "approval.requested": ApprovalRequested,
+    "approval.decided": ApprovalClosed,
+    "approval.closed": ApprovalClosed,
+    "knowledge.created": KnowledgeChanged,
+    "knowledge.updated": KnowledgeChanged,
+    "knowledge.archived": KnowledgeRef,
+    "lesson.proposed": LessonProposed,
+    "lesson.reviewed": ReviewDecided,
+    "role_change.proposed": RoleChangeProposed,
+    "role_change.reviewed": ReviewDecided,
     "artifact.created": ArtifactCreated,
     "scenario.started": ScenarioStarted,
 }

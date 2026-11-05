@@ -1,0 +1,76 @@
+# Kịch bản P2/P3: song song, retry, tool qua Tool Gateway, phê duyệt L3, bài học, đề xuất đổi vai trò.
+id: demo-video-studio-p2
+name: "Demo Video Studio: chạy song song, retry và phê duyệt đăng bài"
+description: "Researcher và Strategist chạy song song; Reviewer lỗi tạm thời rồi tự retry; Producer xin duyệt đăng bài (mô phỏng); Thư ký đề xuất bài học."
+entry:
+  role: CEO
+  title: "Ra mắt video giới thiệu sản phẩm"
+  description: "Làm video 60 giây và đăng lên kênh mạng xã hội (mô phỏng) sau khi được duyệt."
+roles:
+  CEO:
+    steps:
+      - progress: "Chia việc cho Marketing, Sản xuất và Văn phòng"
+      - delegate: {role: CMO, title: "Chốt thông điệp và khán giả"}
+      - delegate: {role: Producer, title: "Sản xuất và đăng video"}
+      - delegate: {role: Secretary, title: "Tổng hợp và rút bài học"}
+      - complete: "Đã ra mắt video (đăng bài mô phỏng) và lưu bài học chờ duyệt."
+  CMO:
+    steps:
+      - progress: "Giao nghiên cứu và chiến lược chạy song song"
+      - parallel:
+          - {role: Researcher, title: "Nghiên cứu khán giả"}
+          - {role: Strategist, title: "Đề xuất thông điệp"}
+      - complete: "Thông điệp: 'Làm nhanh hơn, ít lo hơn' cho nhóm 25–35 tuổi."
+  Researcher:
+    steps:
+      - progress: "Tìm tài liệu đã duyệt trong kho tri thức"
+      - tool: {key: kb.search, params: {query: "khán giả"}, on_error: continue}
+      - artifact:
+          name: audience-research.md
+          content: |
+            # Nghiên cứu khán giả (dữ liệu mô phỏng)
+            - Nhóm chính: 25–35 tuổi, làm văn phòng
+            - Kênh: video ngắn trên điện thoại
+      - complete: "Đã xác định nhóm khán giả chính."
+  Strategist:
+    steps:
+      - progress: "So sánh 3 phương án thông điệp"
+      - complete: "Chọn thông điệp 'Làm nhanh hơn, ít lo hơn'."
+  Producer:
+    steps:
+      - progress: "Lập kế hoạch sản xuất"
+      - delegate: {role: Scriptwriter, title: "Viết kịch bản 60 giây"}
+      - delegate: {role: Reviewer, title: "Duyệt kịch bản", max_attempts: 2}
+      - progress: "Xin phê duyệt đăng bài (hành động L3)"
+      - tool:
+          key: social.publish
+          params: {channel: "example.social", text: "Làm nhanh hơn, ít lo hơn — video mới đã lên sóng!"}
+      - complete: "Video đã được duyệt và đăng (mô phỏng)."
+  Scriptwriter:
+    steps:
+      - progress: "Viết kịch bản vào workspace của dự án"
+      - tool:
+          key: workspace.write
+          params:
+            path: "workspace/script.md"
+            content: "# Kịch bản 60 giây\n0–10s: Vấn đề\n10–40s: Giải pháp\n40–60s: Lời kêu gọi\n"
+      - tool:
+          key: doc.draft
+          params: {title: "Kịch bản 60 giây", body: "0–10s: Vấn đề. 10–40s: Giải pháp. 40–60s: Lời kêu gọi."}
+      - complete: "Kịch bản đã lưu trong workspace và có bản nháp."
+  Reviewer:
+    steps:
+      - progress: "Kiểm tra kịch bản"
+      - fail: {code: REVIEW_TOOL_TIMEOUT, message: "Công cụ kiểm tra quá thời gian (lỗi tạm thời)", retryable: true, until_attempt: 2}
+      - complete: "Kịch bản đạt yêu cầu."
+  Secretary:
+    steps:
+      - progress: "Tổng hợp kết quả các bộ phận"
+      - lesson:
+          title: "Chốt thông điệp trước khi viết kịch bản"
+          lesson: "Khi thông điệp được chốt trước, Reviewer duyệt nhanh hơn và ít phải sửa kịch bản."
+      - propose_role_change:
+          target_role: Reviewer
+          changes: {reports_to_role: CMO}
+          rationale: "Reviewer chủ yếu kiểm tra thông điệp, nên báo cáo trực tiếp cho CMO."
+      - complete: "Đã tổng hợp và gửi bài học, đề xuất chờ duyệt."

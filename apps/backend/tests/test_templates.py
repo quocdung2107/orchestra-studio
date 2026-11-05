@@ -25,7 +25,7 @@ def test_instantiate_demo_template(client: TestClient) -> None:
     )
     assert r.status_code == 201
     c = r.json()
-    assert c["name"] == "Studio 2" and c["max_tool_level"] == 2
+    assert c["name"] == "Studio 2" and c["max_tool_level"] == 3
     g = client.get(f"/api/v1/companies/{c['id']}/org").json()
     assert len(g["departments"]) == 4 and len(g["agents"]) == 8
     names = {d["id"]: d["name"] for d in g["departments"]}
