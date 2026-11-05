@@ -28,9 +28,20 @@ class OllamaSettings(BaseSettingsModel):
     model: str = Field(min_length=1, max_length=200)
     num_ctx: int | None = Field(default=None, ge=512, le=262144)
     max_tokens: int | None = Field(default=None, ge=16, le=65536)
-    # Thinking models (e.g. qwen3) reason before answering. Off by default: on small local
-    # hardware it multiplies latency. None = let the model decide (field not sent).
-    think: bool | None = False
+    # Thinking models (e.g. qwen3). None (default) = field not sent, the model decides.
+    # Measured on Ollama 0.40.14 + qwen3:4b: think=false did NOT stop reasoning, it only
+    # moved it into `content` and was ~10x slower; think=true keeps it in `thinking`.
+    think: bool | None = None
+
+
+_THINK_END = "</think>"
+
+
+def strip_reasoning(text: str) -> str:
+    """Drop reasoning a model leaked into the answer (everything up to the last </think>)."""
+    if _THINK_END in text:
+        text = text.rsplit(_THINK_END, 1)[1]
+    return text.strip()
 
 
 class _Session(ProviderSession):
@@ -74,7 +85,7 @@ class _Session(ProviderSession):
             model=str(data.get("model") or self.s.model),
             input_tokens=int(data.get("prompt_eval_count") or 0),
             output_tokens=int(data.get("eval_count") or 0),
-            text=str(msg.get("content") or ""),
+            text=strip_reasoning(str(msg.get("content") or "")),
         )
         calls = []
         for i, tc in enumerate(msg.get("tool_calls") or []):
@@ -88,8 +99,8 @@ class _Session(ProviderSession):
                 )
             )
         self.messages.append(
-            {k: v for k, v in msg.items() if k in ("role", "content", "tool_calls")}
-            or {"role": "assistant", "content": ""}
+            {k: v for k, v in msg.items() if k in ("role", "tool_calls")}
+            | {"role": "assistant", "content": turn.text}
         )
         turn.tool_calls = calls
         if data.get("done_reason") == "length":

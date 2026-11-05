@@ -114,10 +114,16 @@ export function RuntimeSettingsForm({
             />
           </div>
           {value.runtime_id === "ollama" && (
-            <label className="text-sm block">
-              <input type="checkbox" checked={s.think === true} onChange={(e) => set("think", e.target.checked)} /> Cho model
-              suy nghĩ trước khi trả lời (kỹ hơn nhưng chậm hơn nhiều trên máy yếu)
-            </label>
+            <select
+              className={inputClass}
+              aria-label="Suy nghĩ"
+              value={s.think === true ? "on" : s.think === false ? "off" : ""}
+              onChange={(e) => set("think", e.target.value === "on" ? true : e.target.value === "off" ? false : "")}
+            >
+              <option value="">Suy nghĩ: để model tự quyết (khuyên dùng)</option>
+              <option value="on">Suy nghĩ: bật</option>
+              <option value="off">Suy nghĩ: tắt (qwen3 trên Ollama có thể còn chậm hơn)</option>
+            </select>
           )}
           <p className="text-xs text-slate-500">
             {value.runtime_id === "ollama"

@@ -342,11 +342,23 @@ def test_verify_lists_models(provider: str) -> None:
     assert ok, msg
 
 
-def test_ollama_thinking_is_off_by_default_and_configurable() -> None:
-    server = FakeServer("ollama", [("text", "a"), ("text", "b")])
+def test_ollama_thinking_defaults_to_model_choice_and_is_configurable() -> None:
+    server = FakeServer("ollama", [("text", "a"), ("text", "b"), ("text", "c")])
     rt = make_runtime("ollama", server)
     run(rt, _request("ollama"))
-    assert server.requests[0]["think"] is False
+    assert "think" not in server.requests[0]
     run(rt, _request("ollama", think=True))
     assert server.requests[1]["think"] is True
-    assert rt.validate_settings(settings_for("ollama"))["think"] is False
+    run(rt, _request("ollama", think=False))
+    assert server.requests[2]["think"] is False
+    assert rt.validate_settings(settings_for("ollama")).get("think") is None
+
+
+def test_ollama_reasoning_leaked_into_content_is_stripped() -> None:
+    leaked = "Okay, so I need to write a script...\n</think>\n\nKịch bản: Cảnh 1"
+    server = FakeServer("ollama", [("text", leaked)])
+    events = run(make_runtime("ollama", server), _request("ollama", think=False))
+    art = next(e for e in events if e.type == "run.artifact.produced")
+    assert art.data["content"] == "Kịch bản: Cảnh 1"
+    done = next(e for e in events if e.type == "run.completed")
+    assert "Okay" not in done.data["summary"]
