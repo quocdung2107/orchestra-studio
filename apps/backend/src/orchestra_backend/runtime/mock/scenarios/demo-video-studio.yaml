@@ -1,0 +1,76 @@
+# Kịch bản P0 (ADR-0005): giao việc tuần tự + tạo artifact.
+id: demo-video-studio
+name: "Demo Video Studio: sản xuất video giới thiệu sản phẩm"
+description: "CEO giao việc cho CMO và Producer; nhóm nghiên cứu, viết kịch bản, duyệt và tổng hợp."
+entry:
+  role: CEO
+  title: "Sản xuất video giới thiệu sản phẩm 60 giây"
+  description: "Mục tiêu: video ngắn cho mạng xã hội, ra mắt trong tuần."
+roles:
+  CEO:
+    steps:
+      - progress: "Phân tích yêu cầu và chia việc"
+      - delegate: {role: CMO, title: "Xác định thông điệp và đối tượng khán giả"}
+      - delegate: {role: Producer, title: "Sản xuất kịch bản video"}
+      - delegate: {role: Secretary, title: "Tổng hợp kết quả dự án"}
+      - complete: "Dự án video hoàn tất: có thông điệp, kịch bản đã duyệt và bản tổng hợp."
+  CMO:
+    steps:
+      - progress: "Lập kế hoạch marketing"
+      - delegate: {role: Researcher, title: "Nghiên cứu đối tượng khán giả"}
+      - delegate: {role: Strategist, title: "Đề xuất thông điệp chính"}
+      - complete: "Đã chốt thông điệp: 'Làm nhanh hơn, ít lo hơn' cho nhóm 25–35 tuổi."
+  Researcher:
+    steps:
+      - progress: "Thu thập dữ liệu khán giả (mô phỏng)"
+      - artifact:
+          name: audience-research.md
+          content: |
+            # Nghiên cứu khán giả (dữ liệu mô phỏng)
+            - Nhóm chính: 25–35 tuổi, làm văn phòng
+            - Kênh: video ngắn, xem trên điện thoại
+            - Mối quan tâm: tiết kiệm thời gian
+      - complete: "Đã xác định nhóm khán giả chính."
+  Strategist:
+    steps:
+      - progress: "So sánh 3 phương án thông điệp"
+      - complete: "Chọn thông điệp 'Làm nhanh hơn, ít lo hơn'."
+  Producer:
+    steps:
+      - progress: "Lập kế hoạch sản xuất"
+      - delegate: {role: Scriptwriter, title: "Viết kịch bản 60 giây"}
+      - delegate: {role: Reviewer, title: "Duyệt kịch bản"}
+      - complete: "Kịch bản đã viết và được duyệt."
+  Scriptwriter:
+    steps:
+      - progress: "Viết bản nháp kịch bản"
+      - artifact:
+          name: script.md
+          content: |
+            # Kịch bản 60 giây
+            0–10s: Vấn đề — một ngày làm việc quá tải.
+            10–40s: Giải pháp — sản phẩm xử lý việc lặp lại.
+            40–60s: Lời kêu gọi — "Làm nhanh hơn, ít lo hơn."
+      - complete: "Đã hoàn thành kịch bản 60 giây."
+  Reviewer:
+    steps:
+      - progress: "Kiểm tra kịch bản theo thông điệp"
+      - artifact:
+          name: review.md
+          content: |
+            # Nhận xét kịch bản
+            - Đúng thông điệp: có
+            - Độ dài: 60 giây
+            - Kết luận: duyệt
+      - complete: "Kịch bản đạt yêu cầu."
+  Secretary:
+    steps:
+      - progress: "Tổng hợp kết quả từ các bộ phận"
+      - artifact:
+          name: project-summary.md
+          content: |
+            # Tổng hợp dự án video
+            - Thông điệp: "Làm nhanh hơn, ít lo hơn"
+            - Kịch bản: đã duyệt (xem script.md)
+            - Bài học: chốt thông điệp trước khi viết kịch bản giúp duyệt nhanh hơn.
+      - complete: "Đã lưu bản tổng hợp dự án."
