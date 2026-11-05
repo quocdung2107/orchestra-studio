@@ -23,6 +23,7 @@ export function CompanyOverview({ companyId }: { companyId: string }) {
       <h1 className="text-2xl font-semibold">{c.name}</h1>
       <p className="text-slate-400 mb-2">{c.description || "—"}</p>
       <CeilingSetting companyId={companyId} level={c.max_tool_level} />
+      <ParallelSetting companyId={companyId} value={c.max_parallel_runs} />
       <div className="grid grid-cols-3 gap-4 mb-8">
         {stats.map((s) => (
           <div key={s.label} className="p-4 rounded border border-slate-800 bg-slate-900/40">
@@ -64,6 +65,28 @@ function CeilingSetting({ companyId, level }: { companyId: string; level: number
         {LEVELS.map((l, i) => (
           <option key={i} value={i}>
             {l}
+          </option>
+        ))}
+      </select>
+      {update.isError && <ErrorView error={update.error} />}
+    </div>
+  );
+}
+
+function ParallelSetting({ companyId, value }: { companyId: string; value: number }) {
+  const update = useUpdateCompany(companyId);
+  return (
+    <div className="mb-6 -mt-4 text-sm flex items-center gap-2">
+      <span className="text-slate-400">Số task gốc chạy song song tối đa:</span>
+      <select
+        className="bg-slate-900 border border-slate-700 rounded px-2 py-1"
+        value={value}
+        disabled={update.isPending}
+        onChange={(e) => update.mutate({ max_parallel_runs: Number(e.target.value) })}
+      >
+        {[1, 2, 3, 4, 5, 6, 8, 10].map((n) => (
+          <option key={n} value={n}>
+            {n}
           </option>
         ))}
       </select>

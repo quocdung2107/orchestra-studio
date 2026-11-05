@@ -7,6 +7,8 @@ import { ErrorView, Loading } from "./components/ui";
 import { useEventStream } from "./live/useEventStream";
 import { SelectionProvider, useSelection } from "./state/selection";
 import { AgentsView } from "./views/AgentsView";
+import { ApprovalsView } from "./views/ApprovalsView";
+import { KnowledgeView } from "./views/KnowledgeView";
 import { CapabilitiesView } from "./views/CapabilitiesView";
 import { OrgView } from "./views/OrgView";
 import { CompanyOverview } from "./views/CompanyOverview";
@@ -66,6 +68,10 @@ function Shell() {
           <OrgView companyId={companyId} />
         ) : view === "capabilities" ? (
           <CapabilitiesView companyId={companyId} />
+        ) : view === "approvals" ? (
+          <ApprovalsView companyId={companyId} />
+        ) : view === "knowledge" ? (
+          <KnowledgeView companyId={companyId} />
         ) : (
           <Placeholder view={view} />
         )}

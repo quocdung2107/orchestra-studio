@@ -37,7 +37,11 @@ export function queriesToRefresh(e: EventEnvelope): string[][] {
     out.push(["skills", cid], ["agentSkills"]);
     if (pl.skill_id) out.push(["skillVersions", pl.skill_id]);
   }
-  if (t.startsWith("tool.")) out.push(["tools", cid], ["toolAccess"]);
+  if (t === "tool.created" || t === "tool.updated" || t === "tool.archived") out.push(["tools", cid], ["toolAccess"]);
+  if (t.startsWith("approval.")) out.push(["approvals", cid]);
+  if (t.startsWith("knowledge.")) out.push(["knowledge", cid]);
+  if (t.startsWith("lesson.")) out.push(["lessons", cid]);
+  if (t.startsWith("role_change.")) out.push(["roleProposals", cid]);
   if (t.startsWith("task.")) out.push(["tasks", cid]);
   if (t.startsWith("agent.run.") || t === "artifact.created") {
     out.push(["runs", cid]);
@@ -89,6 +93,39 @@ export function describeEvent(e: EventEnvelope): string {
       return `Cấp tool (L${p.permission_level})`;
     case "template.instantiated":
       return `Tạo từ template ${p.template_id}`;
+    case "agent.run.status_changed":
+      return `Run: ${p.from_status} → ${p.to_status}`;
+    case "agent.run.cancelled":
+      return "Run đã hủy";
+    case "agent.run.retry_scheduled":
+      return `Thử lại lần ${p.next_attempt} sau ${p.delay_ms} ms`;
+    case "task.dependency_added":
+      return "Thêm phụ thuộc";
+    case "task.retry_requested":
+      return "Yêu cầu chạy lại";
+    case "task.cancel_requested":
+      return "Yêu cầu hủy";
+    case "tool.call_requested":
+      return `Gọi tool ${p.tool_key} (L${p.permission_level})`;
+    case "tool.call_denied":
+      return `Từ chối tool ${p.tool_key}: ${p.error_code} (${p.reason})`;
+    case "tool.call_finished":
+      return `Tool ${p.tool_key}: ${p.ok ? "thành công" : `lỗi ${p.error_code}`}`;
+    case "approval.requested":
+      return `Cần phê duyệt: ${p.action_type}`;
+    case "approval.decided":
+    case "approval.closed":
+      return `Phê duyệt: ${p.status}`;
+    case "knowledge.created":
+    case "knowledge.updated":
+      return `Tri thức "${p.title}" v${p.version} (${p.source_type})`;
+    case "lesson.proposed":
+      return `Đề xuất bài học "${p.title}"`;
+    case "lesson.reviewed":
+    case "role_change.reviewed":
+      return `Đã duyệt: ${p.status}`;
+    case "role_change.proposed":
+      return `Đề xuất đổi vai trò: ${Object.keys((p.changes as object) ?? {}).join(", ")}`;
     case "scenario.started":
       return `Bắt đầu kịch bản ${p.scenario_id}`;
     default:

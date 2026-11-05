@@ -1,8 +1,6 @@
 import type { View } from "../state/selection";
 
 const INFO: Partial<Record<View, string>> = {
-  approvals: "Phê duyệt hành động sẽ có ở P2.",
-  knowledge: "Tri thức và bài học sẽ có ở P3.",
   analytics: "KPI và phân tích sẽ có ở P4.",
 };
 

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import re
+import unicodedata
 import uuid
 from typing import Any
 
-from sqlalchemy import or_, select, text
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from orchestra_backend.agents import service as agents_svc
@@ -60,6 +61,33 @@ def fts_available(session: Session) -> bool:
     )
 
 
+def fold(text_: str) -> str:
+    """Lowercase, strip accents and map đ→d, one char to one char (keeps positions).
+
+    FTS5's remove_diacritics does not treat Vietnamese 'đ' as d + diacritic, so
+    "thong diep" would not find "thông điệp" without this.
+    """
+    out = []
+    for ch in text_:
+        if ch in "đĐ":
+            out.append("d")
+        else:
+            out.append(unicodedata.normalize("NFD", ch)[0].lower())
+    return "".join(out)
+
+
+def _snippet(content: str, terms: list[str], width: int = 70) -> str:
+    folded = fold(content)
+    pos = min((i for t in terms if (i := folded.find(t)) >= 0), default=0)
+    start = max(0, pos - width // 2)
+    end = min(len(content), start + width * 2)
+    return (
+        ("…" if start else "")
+        + content[start:end].replace("\n", " ")
+        + ("…" if end < len(content) else "")
+    )
+
+
 def _index(session: Session, item: KnowledgeItem) -> None:
     if not fts_available(session):
         return
@@ -73,15 +101,15 @@ def _index(session: Session, item: KnowledgeItem) -> None:
             {
                 "id": str(item.id),
                 "cid": str(item.company_id),
-                "title": item.title,
-                "content": item.content,
+                "title": fold(item.title),
+                "content": fold(item.content),
             },
         )
 
 
 def _fts_query(q: str) -> str:
     """Turn user text into a safe FTS5 query: quoted prefix terms joined by AND."""
-    words = re.findall(r"\w+", q, flags=re.UNICODE)
+    words = re.findall(r"\w+", fold(q), flags=re.UNICODE)
     return " ".join(f'"{w}"*' for w in words[:12])
 
 
@@ -95,28 +123,31 @@ def search(session: Session, company_id: uuid.UUID, q: str, limit: int = 20) -> 
             return SearchResult(engine="fts5", hits=[])
         rows = session.execute(
             text(
-                "SELECT item_id, snippet(knowledge_fts, 3, '[', ']', '…', 12) FROM knowledge_fts "
+                "SELECT item_id FROM knowledge_fts "
                 "WHERE knowledge_fts MATCH :q AND company_id = :cid ORDER BY rank LIMIT :lim"
             ),
             {"q": query, "cid": str(company_id), "lim": limit},
         ).all()
+        terms = re.findall(r"\w+", fold(q), flags=re.UNICODE)
         hits = []
-        for item_id, snip in rows:
+        for (item_id,) in rows:
             item = session.get(KnowledgeItem, uuid.UUID(item_id))
             if item is not None and item.status == "active":
-                hits.append(_hit(item, snip))
+                hits.append(_hit(item, _snippet(item.content, terms)))
         return SearchResult(engine="fts5", hits=hits)
-    like = f"%{q}%"
+    # Fallback without FTS5: fold in Python so accents/đ behave like the FTS path.
+    terms = re.findall(r"\w+", fold(q), flags=re.UNICODE)
     items = session.scalars(
         select(KnowledgeItem)
-        .where(
-            KnowledgeItem.company_id == company_id,
-            KnowledgeItem.status == "active",
-            or_(KnowledgeItem.title.ilike(like), KnowledgeItem.content.ilike(like)),
-        )
-        .limit(limit)
+        .where(KnowledgeItem.company_id == company_id, KnowledgeItem.status == "active")
+        .order_by(KnowledgeItem.updated_at.desc())
     )
-    return SearchResult(engine="like", hits=[_hit(i, i.content[:160]) for i in items])
+    hits = [
+        _hit(i, _snippet(i.content, terms))
+        for i in items
+        if all(t in fold(i.title + " " + i.content) for t in terms)
+    ][:limit]
+    return SearchResult(engine="like", hits=hits)
 
 
 def _hit(item: KnowledgeItem, snippet: str) -> SearchHit:

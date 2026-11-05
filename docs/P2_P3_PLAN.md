@@ -1,7 +1,7 @@
 # P2 + P3 PLAN — Task Orchestration · Knowledge & Secretary
 
 **Version:** 0.1 · **Date:** 2026-11-05
-**Trạng thái:** Dung yêu cầu "tiếp tục P2, P3" (2026-11-05). ADR 0015–0020 áp dụng theo đề xuất bên dưới; Dung có thể đổi bất kỳ quyết định nào.
+**Trạng thái:** Dung yêu cầu "tiếp tục P2, P3" (2026-11-05). ADR 0015–0020 áp dụng theo đề xuất bên dưới; Dung có thể đổi bất kỳ quyết định nào. L1–M5 xong trên `main` (2026-11-05); còn N1 kiểm tra trên Windows.
 **Phạm vi gốc:** `IMPLEMENTATION_PLAN.md` §2 và §5.
 
 ## 0. Mục tiêu

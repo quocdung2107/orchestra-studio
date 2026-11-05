@@ -1,3 +1,4 @@
+import { useApprovals } from "../api/hooks-p2";
 import type { Company } from "@orchestra/contracts";
 import { useSelection, type View } from "../state/selection";
 
@@ -7,8 +8,8 @@ const NAV: { view: View; label: string; phase?: string }[] = [
   { view: "runs", label: "Tasks & Runs" },
   { view: "organization", label: "Sơ đồ tổ chức" },
   { view: "capabilities", label: "Skills & Tools" },
-  { view: "approvals", label: "Phê duyệt", phase: "P2" },
-  { view: "knowledge", label: "Tri thức", phase: "P3" },
+  { view: "approvals", label: "Phê duyệt" },
+  { view: "knowledge", label: "Tri thức" },
   { view: "analytics", label: "Phân tích", phase: "P4" },
 ];
 
@@ -47,9 +48,17 @@ export function Sidebar({ companies }: { companies: Company[] }) {
           >
             <span>{n.label}</span>
             {n.phase && <span className="text-xs text-slate-500">{n.phase}</span>}
+            {n.view === "approvals" && companyId && <PendingBadge companyId={companyId} />}
           </button>
         ))}
       </nav>
     </aside>
   );
+}
+
+function PendingBadge({ companyId }: { companyId: string }) {
+  const approvals = useApprovals(companyId);
+  const n = approvals.data?.filter((a) => a.status === "pending").length ?? 0;
+  if (!n) return null;
+  return <span className="text-xs px-1.5 rounded bg-amber-600 text-white" aria-label={`${n} yêu cầu chờ duyệt`}>{n}</span>;
 }

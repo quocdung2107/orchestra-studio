@@ -33,12 +33,31 @@ const STATUS_STYLE: Record<string, string> = {
   inactive: "bg-amber-900 text-amber-200",
   failed: "bg-red-900 text-red-200",
   archived: "bg-slate-800 text-slate-400",
+  waiting_approval: "bg-amber-900 text-amber-200",
+  paused: "bg-amber-900 text-amber-200",
+  cancel_requested: "bg-slate-700 text-slate-300",
+  cancelled: "bg-slate-800 text-slate-400",
+  proposed: "bg-amber-900 text-amber-200",
+  approved: "bg-emerald-900 text-emerald-200",
+  rejected: "bg-red-900 text-red-200",
+  expired: "bg-slate-800 text-slate-400",
+};
+
+const STATUS_TEXT: Record<string, string> = {
+  waiting_approval: "chờ duyệt",
+  paused: "tạm dừng",
+  cancel_requested: "đang hủy",
+  cancelled: "đã hủy",
+  proposed: "chờ duyệt",
+  approved: "đã duyệt",
+  rejected: "từ chối",
+  expired: "hết hạn",
 };
 
 export function StatusBadge({ status }: { status: string }) {
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_STYLE[status] ?? "bg-slate-700"}`}>
-      {status}
+      {STATUS_TEXT[status] ?? status}
     </span>
   );
 }

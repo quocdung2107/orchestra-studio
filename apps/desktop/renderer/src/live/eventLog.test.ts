@@ -55,3 +55,21 @@ describe("describeEvent", () => {
     expect(describeEvent(e)).toBe("Lỗi X: boom");
   });
 });
+
+describe("P2/P3 events", () => {
+  it("refreshes approvals, knowledge, lessons and proposals", () => {
+    const keys = (t: string) => queriesToRefresh(ev(1, t)).map((k) => k[0]);
+    expect(keys("approval.requested")).toContain("approvals");
+    expect(keys("knowledge.created")).toContain("knowledge");
+    expect(keys("lesson.proposed")).toContain("lessons");
+    expect(keys("role_change.reviewed")).toContain("roleProposals");
+  });
+  it("does not refetch the tool catalog for every tool call", () => {
+    expect(queriesToRefresh(ev(1, "tool.call_finished")).map((k) => k[0])).not.toContain("tools");
+    expect(queriesToRefresh(ev(1, "tool.updated")).map((k) => k[0])).toContain("tools");
+  });
+  it("describes approvals and tool calls", () => {
+    expect(describeEvent(ev(1, "approval.requested", { payload: { action_type: "tool:social.publish" } }))).toContain("social.publish");
+    expect(describeEvent(ev(1, "tool.call_denied", { payload: { tool_key: "x", error_code: "TOOL_DENIED", reason: "deny_not_granted" } }))).toContain("TOOL_DENIED");
+  });
+});

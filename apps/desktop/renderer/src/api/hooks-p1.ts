@@ -103,7 +103,7 @@ export function useSaveLayout(cid: string) {
 export function useUpdateCompany(cid: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { name?: string; description?: string; max_tool_level?: number }) =>
+    mutationFn: async (body: { name?: string; description?: string; max_tool_level?: number; max_parallel_runs?: number }) =>
       unwrap(await api.PATCH("/api/v1/companies/{company_id}", { ...p(cid), body })),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.company(cid) });

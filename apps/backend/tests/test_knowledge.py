@@ -161,3 +161,34 @@ def test_role_proposal_validation_and_instructions(client: TestClient) -> None:
         json={"agent_id": roles["CEO"]["id"], "changes": {}},
     )
     assert empty.status_code == 422
+
+
+def test_search_handles_vietnamese_d(client: TestClient, company: dict) -> None:
+    cid = company["id"]
+    client.post(
+        f"{API}/companies/{cid}/knowledge",
+        json={"title": "Chốt thông điệp", "content": "Đối tượng là nhân viên văn phòng."},
+    )
+    for q in ("thong diep", "thông điệp", "doi tuong", "ĐỐI"):
+        hits = client.get(f"{API}/companies/{cid}/knowledge/search", params={"q": q}).json()["hits"]
+        assert len(hits) == 1, q
+    assert "Đối tượng" in hits[0]["snippet"]
+
+
+def test_like_fallback_matches_fts_behaviour(container, company: dict) -> None:
+    import uuid as _uuid
+
+    from orchestra_backend.knowledge import service as kn
+    from orchestra_backend.knowledge.schemas import KnowledgeCreate
+
+    cid = _uuid.UUID(company["id"])
+    with container.tx() as s:
+        kn.create_note(s, cid, KnowledgeCreate(title="Thông điệp", content="Đối tượng 25 tuổi"))
+    original = kn.fts_available
+    kn.fts_available = lambda s: False  # type: ignore[assignment]
+    try:
+        with container.tx() as s:
+            res = kn.search(s, cid, "doi tuong")
+    finally:
+        kn.fts_available = original  # type: ignore[assignment]
+    assert res.engine == "like" and len(res.hits) == 1

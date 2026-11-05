@@ -10,6 +10,7 @@ import {
   type AgentAction,
 } from "../api/hooks";
 import { errorMessage } from "../api/client";
+import { useArtifactToKnowledge, usePauseRun, useResumeRun } from "../api/hooks-p2";
 import { describeEvent } from "../live/eventLog";
 import { useSelection, type Selection } from "../state/selection";
 import { DefinitionPanel, PlacementPanel, SkillsPanel, ToolsPanel, VersionComparePanel } from "./AgentOrgPanels";
@@ -104,6 +105,11 @@ function AgentInspector({ companyId, agentId }: { companyId: string; agentId: st
 
 function RunInspector({ companyId, runId }: { companyId: string; runId: string }) {
   const run = useRun(runId);
+  const runtimes = useRuntimes();
+  const pause = usePauseRun(companyId);
+  const resume = useResumeRun(companyId);
+  const toKnowledge = useArtifactToKnowledge(companyId);
+  const [saved, setSaved] = useState<Set<string>>(new Set());
   const events = useRunEvents(companyId, runId);
   const [preview, setPreview] = useState<{ name: string; text: string } | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -118,9 +124,24 @@ function RunInspector({ companyId, runId }: { companyId: string; runId: string }
         <div className="text-slate-400">
           {r.agent_name} · {r.agent_role} · runtime {r.runtime_id}
         </div>
-        <div className="mt-2">
+        <div className="mt-2 flex items-center gap-2">
           <StatusBadge status={r.status} />
+          {r.attempt > 1 && <span className="text-xs text-slate-400">lần thử {r.attempt}</span>}
+          {(() => {
+            const caps = runtimes.data?.find((x) => x.runtime_id === r.runtime_id)?.capabilities ?? {};
+            return (
+              <>
+                {caps.supports_pause && r.status === "running" && (
+                  <SecondaryButton disabled={pause.isPending} onClick={() => pause.mutate(r.id)}>Tạm dừng</SecondaryButton>
+                )}
+                {caps.supports_resume && r.status === "paused" && (
+                  <SecondaryButton disabled={resume.isPending} onClick={() => resume.mutate(r.id)}>Tiếp tục</SecondaryButton>
+                )}
+              </>
+            );
+          })()}
         </div>
+        {(pause.isError || resume.isError) && <ErrorView error={pause.error ?? resume.error} />}
         <div className="text-xs text-slate-500 mt-2">
           Bắt đầu {formatTime(r.started_at)} · Kết thúc {formatTime(r.finished_at)}
         </div>
@@ -138,9 +159,9 @@ function RunInspector({ companyId, runId }: { companyId: string; runId: string }
         <div className="text-xs uppercase text-slate-500 mb-1">Artifacts</div>
         {r.artifacts.length === 0 && <div className="text-slate-500">Không có.</div>}
         {r.artifacts.map((a) => (
+          <div key={a.id} className="flex items-center gap-1">
           <button
-            key={a.id}
-            className="block w-full text-left hover:bg-slate-800 rounded px-1"
+            className="block flex-1 text-left hover:bg-slate-800 rounded px-1"
             onClick={async () => {
               setPreviewError(null);
               try {
@@ -152,7 +173,17 @@ function RunInspector({ companyId, runId }: { companyId: string; runId: string }
           >
             📄 {a.name} <span className="text-xs text-slate-500">{a.size_bytes} B · {a.checksum.slice(0, 15)}…</span>
           </button>
+          <button
+            className="text-xs underline text-slate-400 shrink-0 disabled:no-underline"
+            disabled={saved.has(a.id) || toKnowledge.isPending}
+            title="Lưu nội dung vào Tri thức (giữ nguồn là artifact này)"
+            onClick={() => toKnowledge.mutate(a.id, { onSuccess: () => setSaved(new Set([...saved, a.id])) })}
+          >
+            {saved.has(a.id) ? "đã lưu" : "→ tri thức"}
+          </button>
+          </div>
         ))}
+        {toKnowledge.isError && <ErrorView error={toKnowledge.error} />}
         {previewError && <p className="text-red-300 text-xs">{previewError}</p>}
         {preview && (
           <pre className="mt-2 p-2 bg-slate-900 rounded text-xs whitespace-pre-wrap">

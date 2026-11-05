@@ -2,7 +2,7 @@
 
 Ứng dụng desktop điều hành các tổ chức AI (AI Organization Control Center): tạo Company, Agent, giao việc, theo dõi thực thi và phê duyệt hành động. Bắt đầu local trên Windows với Mock Agent, mở rộng sang nhiều runtime và hybrid sau này.
 
-**Trạng thái:** P0 xong và đã kiểm tra trên Windows. P1 (tổ chức, skill, tool, quyền, template) xong phần code, đang kiểm tra trên Windows. Kế hoạch: `docs/P1_PLAN.md`.
+**Trạng thái:** P0 và P1 xong, đã kiểm tra trên Windows. P2 (điều phối task, phê duyệt) và P3 (tri thức, Thư ký) xong phần code, đang kiểm tra trên Windows. Kế hoạch: `docs/P2_P3_PLAN.md`.
 
 ## Tài liệu
 
@@ -108,11 +108,24 @@ pnpm test        # gồm kiểm tra openapi.json còn khớp với backend
 8. Agents → Tạo agent: điền nhanh từ mẫu agent, chọn phòng ban.
 9. Mọi thay đổi trên xuất hiện trong Activity Console và còn sau khi mở lại app.
 
+## P2 + P3 acceptance (IMPLEMENTATION_PLAN §5)
+
+1. Tạo company từ template "Demo Video Studio" (template mới: trần L3, Producer được xin đăng bài).
+2. Tasks & Runs → chạy "chạy song song, retry và phê duyệt đăng bài". Nghiên cứu và Chiến lược chạy cùng lúc; "Duyệt kịch bản" lỗi tạm thời rồi tự chạy lại (2 lần chạy).
+3. Thanh bên hiện số yêu cầu chờ ở "Phê duyệt". Mở ra thấy nội dung đăng bài và checksum. Duyệt → bài đăng **mô phỏng** (artifact `outbox-*.json`), task hoàn tất. Chạy lại và chọn Từ chối → Producer và CEO thất bại với `APPROVAL_REJECTED`/`CHILD_TASK_FAILED`.
+4. Tạo task tay (+ Tạo task), chọn "chỉ chạy sau" một task khác → task chờ; task trước lỗi thì task sau hiện "bị chặn bởi", bấm "chạy lại" task trước để mở khóa.
+5. Bấm một run đang chạy → Inspector có "Tạm dừng"/"Tiếp tục". Nút "hủy" ở task gốc hủy cả cây, kể cả yêu cầu phê duyệt đang chờ.
+6. Tổng quan: đổi số task chạy song song tối đa.
+7. Task gốc đã xong → "tóm tắt" (tóm tắt tự động, không dùng AI) vào Tri thức. Inspector run → "→ tri thức" để lưu artifact kèm nguồn.
+8. Tri thức: tìm không dấu ("thong diep"), sửa ghi chú tăng version; tab Bài học duyệt bài học của Thư ký; tab Đề xuất đổi vai trò duyệt để Reviewer báo cáo cho CMO (xem lại Sơ đồ tổ chức).
+9. Đóng app khi đang chờ duyệt, mở lại → yêu cầu chuyển "hết hạn", run báo `INTERRUPTED` (không giả là đã xong).
+
 ## Giới hạn hiện tại (có chủ đích)
 
 - Chỉ có Mock Runtime (L0). Ollama/Claude/OpenAI ở P4.
-- Tool chỉ được khai báo và cấp quyền, chưa thực thi; phê duyệt L3 thực thi ở P2 (ADR-0013).
-- Chạy tuần tự, mỗi company một kịch bản tại một thời điểm (ADR-0004/0008).
+- Tool tích hợp: `kb.search`, `doc.draft`, `workspace.write` (chỉ ghi trong `data/workspaces/<company>/<task>/`), `social.publish` (**mô phỏng**, không gọi mạng). Kết nối thật ở P4/P5 (ADR-0018).
+- Tạm dừng một run chỉ dừng bước của chính run đó; task con đang chạy vẫn chạy tiếp.
+- Tìm kiếm tri thức là full-text (SQLite FTS5), chưa có tìm theo ngữ nghĩa (P4).
 - Chưa có pause/resume/cancel: runtime mock không hỗ trợ nên UI không hiển thị nút.
 - App desktop chạy từ mã nguồn và cần `uv`; chưa có bản cài đặt (cần ADR riêng).
 
