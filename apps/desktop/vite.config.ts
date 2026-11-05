@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 const BACKEND = `http://127.0.0.1:${process.env.ORCHESTRA_PORT ?? "8765"}`;
-const TOKEN_FILE = resolve(__dirname, "../../data/backend-token");
+const TOKEN_FILE = resolve(import.meta.dirname, "../../data/backend-token");
 
 // ADR-0009: the dev proxy injects the per-launch token, so the browser never holds it.
 function readToken(): string {
