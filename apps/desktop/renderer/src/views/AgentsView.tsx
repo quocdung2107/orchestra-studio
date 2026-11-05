@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAgents, useCreateAgent, useRuntimes } from "../api/hooks";
+import { fetchAgentPreset, useDepartments, useTemplates } from "../api/hooks-p1";
 import { Button, Empty, ErrorView, Loading, Section, StatusBadge, inputClass } from "../components/ui";
 import { useSelection } from "../state/selection";
 
@@ -57,6 +58,24 @@ function CreateAgentForm({ companyId, onDone }: { companyId: string; onDone: () 
   const [role, setRole] = useState("");
   const [instructions, setInstructions] = useState("");
   const [runtimeId, setRuntimeId] = useState("mock");
+  const [departmentId, setDepartmentId] = useState("");
+  const [presetError, setPresetError] = useState<unknown>(null);
+  const templates = useTemplates();
+  const departments = useDepartments(companyId);
+  const presets = templates.data?.filter((t) => t.kind === "agent") ?? [];
+  const applyPreset = async (id: string) => {
+    if (!id) return;
+    try {
+      const p = await fetchAgentPreset(id);
+      setName(p.name);
+      setRole(p.role);
+      setInstructions(p.instructions);
+      setRuntimeId(p.runtime);
+      setPresetError(null);
+    } catch (e) {
+      setPresetError(e);
+    }
+  };
 
   return (
     <form
@@ -64,11 +83,22 @@ function CreateAgentForm({ companyId, onDone }: { companyId: string; onDone: () 
       onSubmit={(e) => {
         e.preventDefault();
         create.mutate(
-          { name, role, definition: { instructions }, runtime: { runtime_id: runtimeId } },
+          { name, role, department_id: departmentId || null, definition: { instructions }, runtime: { runtime_id: runtimeId } },
           { onSuccess: (a) => { select({ kind: "agent", id: a.id }); onDone(); } },
         );
       }}
     >
+      {presets.length > 0 && (
+        <select className={inputClass} defaultValue="" onChange={(e) => void applyPreset(e.target.value)} aria-label="Mẫu agent">
+          <option value="">— Điền từ mẫu agent (không bắt buộc) —</option>
+          {presets.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.title}
+            </option>
+          ))}
+        </select>
+      )}
+      {presetError != null && <ErrorView error={presetError} />}
       <input className={inputClass} placeholder="Tên" value={name} onChange={(e) => setName(e.target.value)} />
       <input className={inputClass} placeholder="Vai trò (ví dụ Researcher)" value={role} onChange={(e) => setRole(e.target.value)} />
       <textarea className={inputClass} rows={3} placeholder="Chỉ dẫn" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
@@ -76,6 +106,14 @@ function CreateAgentForm({ companyId, onDone }: { companyId: string; onDone: () 
         {runtimes.data?.map((r) => (
           <option key={r.runtime_id} value={r.runtime_id}>
             {r.display_name}
+          </option>
+        ))}
+      </select>
+      <select className={inputClass} value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} aria-label="Phòng ban">
+        <option value="">— Không thuộc phòng ban —</option>
+        {departments.data?.map((d) => (
+          <option key={d.id} value={d.id}>
+            {d.name}
           </option>
         ))}
       </select>

@@ -12,6 +12,7 @@ import {
 import { errorMessage } from "../api/client";
 import { describeEvent } from "../live/eventLog";
 import { useSelection, type Selection } from "../state/selection";
+import { DefinitionPanel, PlacementPanel, SkillsPanel, ToolsPanel, VersionComparePanel } from "./AgentOrgPanels";
 import { ErrorView, Loading, SecondaryButton, StatusBadge, formatTime } from "./ui";
 
 export function Inspector({ companyId, selection }: { companyId: string | null; selection: Selection }) {
@@ -72,18 +73,22 @@ function AgentInspector({ companyId, agentId }: { companyId: string; agentId: st
         ))}
       </div>
       {action.isError && <ErrorView error={action.error} />}
+      <PlacementPanel companyId={companyId} agent={a} />
+      <DefinitionPanel key={a.current_version_id ?? "none"} companyId={companyId} agent={a} />
       {a.current_version && (
-        <div>
-          <div className="text-xs uppercase text-slate-500 mb-1">Phiên bản hiện tại v{a.current_version.version_number}</div>
-          <p className="whitespace-pre-wrap text-slate-300">{a.current_version.definition.instructions || "(chưa có chỉ dẫn)"}</p>
-          <p className="mt-2 text-slate-400">Runtime: {rt?.display_name ?? a.current_version.runtime.runtime_id}</p>
+        <p className="text-xs text-slate-400">
+          Runtime: {rt?.display_name ?? a.current_version.runtime.runtime_id}
           {rt && (
-            <p className="text-xs text-slate-500 mt-1">
-              Hỗ trợ: {Object.entries(rt.capabilities).filter(([, v]) => v).map(([k]) => k.replace("supports_", "")).join(", ") || "—"}
-            </p>
+            <>
+              {" "}· hỗ trợ:{" "}
+              {Object.entries(rt.capabilities).filter(([, v]) => v).map(([k]) => k.replace("supports_", "")).join(", ") || "—"}
+            </>
           )}
-        </div>
+        </p>
       )}
+      <SkillsPanel companyId={companyId} agent={a} />
+      <ToolsPanel agent={a} />
+      <VersionComparePanel agentId={a.id} />
       <div>
         <div className="text-xs uppercase text-slate-500 mb-1">Lịch sử phiên bản</div>
         {versions.isLoading && <Loading />}

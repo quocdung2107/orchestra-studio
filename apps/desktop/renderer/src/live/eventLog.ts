@@ -24,12 +24,20 @@ export function queriesToRefresh(e: EventEnvelope): string[][] {
   const cid = e.company_id;
   const out: string[][] = [];
   const t = e.event_type;
-  if (t.startsWith("company.")) out.push(["companies"], ["company", cid]);
+  const pl = e.payload as { agent_id?: string; skill_id?: string };
+  if (t.startsWith("company.")) out.push(["companies"], ["company", cid], ["toolAccess"]);
+  if (t.startsWith("department.")) out.push(["org", cid], ["departments", cid], ["toolAccess"]);
   if (t.startsWith("agent.") && !t.startsWith("agent.run.")) {
-    out.push(["agents", cid]);
-    const agentId = (e.payload as { agent_id?: string }).agent_id;
-    if (agentId) out.push(["agent", agentId], ["versions", agentId]);
+    out.push(["agents", cid], ["org", cid]);
+    if (pl.agent_id) out.push(["agent", pl.agent_id], ["versions", pl.agent_id]);
+    if (t.startsWith("agent.skill_") && pl.agent_id) out.push(["agentSkills", pl.agent_id]);
+    if (t.startsWith("agent.tool_") && pl.agent_id) out.push(["toolAccess", pl.agent_id]);
   }
+  if (t.startsWith("skill.")) {
+    out.push(["skills", cid], ["agentSkills"]);
+    if (pl.skill_id) out.push(["skillVersions", pl.skill_id]);
+  }
+  if (t.startsWith("tool.")) out.push(["tools", cid], ["toolAccess"]);
   if (t.startsWith("task.")) out.push(["tasks", cid]);
   if (t.startsWith("agent.run.") || t === "artifact.created") {
     out.push(["runs", cid]);
@@ -61,6 +69,26 @@ export function describeEvent(e: EventEnvelope): string {
       return `Lỗi ${p.error_code}: ${p.error_summary}`;
     case "artifact.created":
       return `Artifact ${p.name} (${p.size_bytes} bytes)`;
+    case "department.created":
+      return `Tạo phòng ban "${p.name}"`;
+    case "agent.updated":
+    case "department.updated":
+    case "company.updated":
+      return `Thay đổi: ${Object.keys((p.changes as object) ?? {}).join(", ")}`;
+    case "skill.created":
+      return `Tạo skill "${p.name}"`;
+    case "skill.version_created":
+    case "agent.version_created":
+      return `Phiên bản mới v${p.version_number}`;
+    case "agent.skill_attached":
+      return `Gắn skill (v${p.version_number})`;
+    case "tool.created":
+    case "tool.updated":
+      return `Tool ${p.key} v${p.version}`;
+    case "agent.tool_granted":
+      return `Cấp tool (L${p.permission_level})`;
+    case "template.instantiated":
+      return `Tạo từ template ${p.template_id}`;
     case "scenario.started":
       return `Bắt đầu kịch bản ${p.scenario_id}`;
     default:

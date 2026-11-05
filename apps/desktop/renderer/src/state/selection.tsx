@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
-export type View = "overview" | "agents" | "runs" | "organization" | "approvals" | "knowledge" | "analytics";
+export type View = "overview" | "agents" | "runs" | "organization" | "capabilities" | "approvals" | "knowledge" | "analytics";
 export type Selection = { kind: "agent"; id: string } | { kind: "run"; id: string } | null;
 
 type Ctx = {

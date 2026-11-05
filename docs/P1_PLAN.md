@@ -1,6 +1,7 @@
 # P1 PLAN — Organization & Agent Manager
 
-**Version:** 0.1 (Dung đã duyệt 2026-11-05, ADR 0010–0014 Accepted) · **Date:** 2026-11-05
+**Version:** 0.2 (Dung đã duyệt 2026-11-05, ADR 0010–0014 Accepted) · **Date:** 2026-11-05
+**Trạng thái:** H1–J3 xong trên `main` (2026-11-05). Còn K1: kiểm tra trên Windows.
 **Phạm vi gốc:** `IMPLEMENTATION_PLAN.md` §2 (P1): Org Builder, templates, versions, skills, tools.
 **Tiêu chí gốc (§5):** sơ đồ tổ chức lưu được, sửa được, có kiểm tra hợp lệ; skill và tool có version và gắn quyền.
 

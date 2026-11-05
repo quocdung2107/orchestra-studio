@@ -1,4 +1,5 @@
 import { useAgents, useCompany, useRuns, useTasks } from "../api/hooks";
+import { useUpdateCompany } from "../api/hooks-p1";
 import { ErrorView, Loading, Section, StatusBadge } from "../components/ui";
 import { useSelection } from "../state/selection";
 
@@ -20,7 +21,8 @@ export function CompanyOverview({ companyId }: { companyId: string }) {
   return (
     <div>
       <h1 className="text-2xl font-semibold">{c.name}</h1>
-      <p className="text-slate-400 mb-6">{c.description || "—"}</p>
+      <p className="text-slate-400 mb-2">{c.description || "—"}</p>
+      <CeilingSetting companyId={companyId} level={c.max_tool_level} />
       <div className="grid grid-cols-3 gap-4 mb-8">
         {stats.map((s) => (
           <div key={s.label} className="p-4 rounded border border-slate-800 bg-slate-900/40">
@@ -42,6 +44,30 @@ export function CompanyOverview({ companyId }: { companyId: string }) {
           </button>
         ))}
       </Section>
+    </div>
+  );
+}
+
+const LEVELS = ["L0 · chỉ đọc", "L1 · tạo nháp", "L2 · ghi trong workspace", "L3 · tác động bên ngoài (cần duyệt)"];
+
+function CeilingSetting({ companyId, level }: { companyId: string; level: number }) {
+  const update = useUpdateCompany(companyId);
+  return (
+    <div className="mb-6 text-sm flex items-center gap-2">
+      <span className="text-slate-400">Trần quyền tool của company:</span>
+      <select
+        className="bg-slate-900 border border-slate-700 rounded px-2 py-1"
+        value={level}
+        disabled={update.isPending}
+        onChange={(e) => update.mutate({ max_tool_level: Number(e.target.value) })}
+      >
+        {LEVELS.map((l, i) => (
+          <option key={i} value={i}>
+            {l}
+          </option>
+        ))}
+      </select>
+      {update.isError && <ErrorView error={update.error} />}
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { ErrorView, Loading } from "./components/ui";
 import { useEventStream } from "./live/useEventStream";
 import { SelectionProvider, useSelection } from "./state/selection";
 import { AgentsView } from "./views/AgentsView";
+import { CapabilitiesView } from "./views/CapabilitiesView";
+import { OrgView } from "./views/OrgView";
 import { CompanyOverview } from "./views/CompanyOverview";
 import { NoCompany } from "./views/NoCompany";
 import { Placeholder } from "./views/Placeholder";
@@ -60,6 +62,10 @@ function Shell() {
           <AgentsView companyId={companyId} />
         ) : view === "runs" ? (
           <RunsView companyId={companyId} />
+        ) : view === "organization" ? (
+          <OrgView companyId={companyId} />
+        ) : view === "capabilities" ? (
+          <CapabilitiesView companyId={companyId} />
         ) : (
           <Placeholder view={view} />
         )}

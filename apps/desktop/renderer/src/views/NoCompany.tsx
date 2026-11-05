@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { useCreateCompany, useSeedDemo } from "../api/hooks";
+import { useCreateCompany } from "../api/hooks";
+import { useInstantiateTemplate, useTemplates } from "../api/hooks-p1";
 import { useSelection } from "../state/selection";
 import { Button, ErrorView, SecondaryButton, inputClass } from "../components/ui";
 
 export function NoCompany() {
   const { setCompanyId, setView } = useSelection();
   const create = useCreateCompany();
-  const seed = useSeedDemo();
+  const templates = useTemplates();
+  const inst = useInstantiateTemplate();
+  const [tplName, setTplName] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -35,17 +38,25 @@ export function NoCompany() {
         {create.isError && <ErrorView error={create.error} />}
       </form>
       <div className="space-y-2">
-        <h2 className="font-medium">Tổ chức mẫu</h2>
-        <p className="text-sm text-slate-400">
-          Demo Video Studio: 8 agent (CEO, CMO, Researcher, Strategist, Producer, Scriptwriter, Reviewer, Secretary) chạy bằng Mock Runtime, không gọi AI.
-        </p>
-        <SecondaryButton
-          disabled={seed.isPending}
-          onClick={() => seed.mutate(undefined, { onSuccess: (c) => { setCompanyId(c.id); setView("runs"); } })}
-        >
-          {seed.isPending ? "Đang tạo…" : "Tạo Demo Video Studio"}
-        </SecondaryButton>
-        {seed.isError && <ErrorView error={seed.error} />}
+        <h2 className="font-medium">Tạo từ template</h2>
+        <p className="text-sm text-slate-400">Template là file YAML trong thư mục templates/company. Agent chạy bằng Mock Runtime, không gọi AI.</p>
+        <input className={inputClass} placeholder="Tên company (để trống = theo template)" value={tplName} onChange={(e) => setTplName(e.target.value)} />
+        {templates.data
+          ?.filter((t) => t.kind === "company")
+          .map((t) => (
+            <div key={t.id} className="border border-slate-800 rounded p-3">
+              <div className="font-medium">{t.title}</div>
+              <p className="text-sm text-slate-400 mb-2">{t.description}</p>
+              <SecondaryButton
+                disabled={inst.isPending}
+                onClick={() => inst.mutate({ id: t.id, name: tplName.trim() || undefined }, { onSuccess: (c) => { setCompanyId(c.id); setView("organization"); setTplName(""); } })}
+              >
+                {inst.isPending ? "Đang tạo…" : `Tạo từ “${t.title}”`}
+              </SecondaryButton>
+            </div>
+          ))}
+        {templates.isError && <ErrorView error={templates.error} />}
+        {inst.isError && <ErrorView error={inst.error} />}
       </div>
     </div>
   );
