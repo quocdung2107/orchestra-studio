@@ -1,0 +1,18 @@
+{
+  "name": "@orchestra/contracts",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "uv run --project ../../apps/backend python -m orchestra_backend.export_openapi openapi.json && openapi-typescript openapi.json -o src/api.d.ts --default-non-nullable false",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "node scripts/check-fresh.mjs"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3"
+  }
+}

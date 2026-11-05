@@ -1,0 +1,19 @@
+{
+  "name": "orchestra-studio",
+  "private": true,
+  "scripts": {
+    "backend": "uv run --project apps/backend orchestra-backend",
+    "contracts": "pnpm --filter @orchestra/contracts run generate",
+    "dev": "pnpm --filter @orchestra/desktop run dev",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "build": "pnpm --filter @orchestra/desktop run build",
+    "desktop": "pnpm --filter @orchestra/desktop run desktop"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
+  }
+}

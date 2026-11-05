@@ -4,6 +4,8 @@
 **Thay thế:** thứ tự P0-01 → P0-10 trong `IMPLEMENTATION_PLAN.md` §3 (nội dung và tiêu chí hoàn thành ở đó vẫn áp dụng).
 **Dựa trên:** ADR-0001 → ADR-0009.
 
+> **Trạng thái 2026-11-05:** toàn bộ task A–G đã được code theo yêu cầu của Dung (làm liền, commit thẳng lên main thay vì 1 PR/task). Còn lại: G2 (chạy P0 acceptance trên Windows). Lệch so với kế hoạch: run status P0 chỉ gồm `queued/running/completed/failed`; artifact hiện chỉ cho phép text/markdown/json.
+
 ## Nguyên tắc
 
 - 1 task = 1 PR nhỏ, kết thúc ở trạng thái **chạy được và test pass**.

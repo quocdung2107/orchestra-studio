@@ -157,6 +157,7 @@ class Orchestrator:
                     error_code=code,
                     error_summary=summary,
                     correlation_id=corr,
+                    source="orchestrator",  # the orchestrator decided this, not the runtime
                 )
 
             return _f

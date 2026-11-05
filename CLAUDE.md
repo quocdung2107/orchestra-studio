@@ -7,7 +7,8 @@
 4. Tài liệu liên quan trong `docs/`.
 
 Quy tắc ngắn:
-- Mỗi PR làm đúng một task trong `docs/P0_PLAN.md`, kết thúc ở trạng thái chạy được và test pass.
+- Mỗi thay đổi làm đúng một task, kết thúc ở trạng thái chạy được và test pass.
+- Trước khi commit: `uv run pytest` + `uv run ruff check .` (apps/backend), `pnpm typecheck`, `pnpm test`.
 - Môi trường dev chính là Windows: script phải đa nền tảng, không dùng cú pháp bash trong `package.json`.
 - Quyết định mới ảnh hưởng kiến trúc → thêm ADR trong `docs/adr/`.
 - Điền đủ PR template, đặc biệt mục "Làm tiếp từ đâu".

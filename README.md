@@ -2,7 +2,7 @@
 
 Ứng dụng desktop điều hành các tổ chức AI (AI Organization Control Center): tạo Company, Agent, giao việc, theo dõi thực thi và phê duyệt hành động. Bắt đầu local trên Windows với Mock Agent, mở rộng sang nhiều runtime và hybrid sau này.
 
-**Trạng thái:** P0 — đang dựng nền tảng. Chưa có code chạy được.
+**Trạng thái:** P0 đã xong phần code (backend, dashboard, mock runtime, Electron). Đang chờ kiểm tra P0 acceptance trên Windows.
 
 ## Tài liệu
 
@@ -46,7 +46,62 @@ pnpm --version
 
 Node.js từ bản 25 không còn kèm Corepack, nên không dùng `corepack enable`. Nếu `pnpm` vẫn chưa nhận sau khi cài, đóng và mở lại terminal.
 
-Lệnh chạy backend và frontend sẽ được thêm vào đây ở task A2 và C1.
+## Chạy ứng dụng
+
+Lần đầu, trong thư mục repo:
+
+```powershell
+pnpm install
+```
+
+**Ứng dụng desktop (Electron):** tự khởi động backend, không cần API key.
+
+```powershell
+pnpm desktop
+```
+
+Lần chạy đầu `uv` sẽ tải Python và thư viện nên có thể mất 1–2 phút.
+
+**Chế độ phát triển (trình duyệt, tự reload khi sửa code):** mở 2 terminal.
+
+```powershell
+pnpm backend   # terminal 1: API tại http://127.0.0.1:8765
+pnpm dev       # terminal 2: mở http://127.0.0.1:5173
+```
+
+Muốn xem trong Electron với hot reload: giữ 2 terminal trên, dùng `pnpm desktop:dev` ở terminal thứ 3 nhưng **tắt `pnpm backend`** trước, vì Electron tự khởi động backend riêng.
+
+Dữ liệu (SQLite, artifact, token) nằm trong `data/` ở gốc repo. Xóa thư mục này để bắt đầu lại từ đầu.
+
+## Kiểm tra
+
+```powershell
+cd apps/backend; uv run pytest; uv run ruff check .; cd ../..
+pnpm typecheck
+pnpm test        # gồm kiểm tra openapi.json còn khớp với backend
+```
+
+Đổi API backend thì chạy `pnpm contracts` để sinh lại type TypeScript (ADR-0003).
+
+## P0 acceptance (IMPLEMENTATION_PLAN §4)
+
+1. `pnpm desktop` mở được app, không cần API key.
+2. Tạo company (màn hình Bắt đầu).
+3. Tạo vài agent (Agents → Tạo agent), kích hoạt trong Inspector.
+4. Tạo Demo Video Studio (màn hình Bắt đầu).
+5. Tasks & Runs → chạy "sản xuất video giới thiệu sản phẩm".
+6. Xem sự kiện chạy trong Activity Console.
+7. Trạng thái task/run đổi theo backend.
+8. Bấm một task → Inspector hiện kết quả và artifact (bấm để xem nội dung).
+9. Chạy "kịch bản lỗi khi duyệt" → thấy `QUALITY_CHECK_FAILED` lan lên Producer và CEO.
+10. Đóng app, mở lại → company, agent và lịch sử sự kiện vẫn còn.
+
+## Giới hạn hiện tại (có chủ đích)
+
+- Chỉ có Mock Runtime (L0). Ollama/Claude/OpenAI ở P4.
+- Chạy tuần tự, mỗi company một kịch bản tại một thời điểm (ADR-0004/0008).
+- Chưa có pause/resume/cancel: runtime mock không hỗ trợ nên UI không hiển thị nút.
+- App desktop chạy từ mã nguồn và cần `uv`; chưa có bản cài đặt (cần ADR riêng).
 
 ## Quy trình làm việc
 
