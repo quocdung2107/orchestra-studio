@@ -1,0 +1,45 @@
+# --- Dữ liệu runtime & bí mật: không bao giờ commit ---
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# --- Node ---
+node_modules/
+dist/
+dist-electron/
+out/
+.vite/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+
+# --- Editor / OS ---
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

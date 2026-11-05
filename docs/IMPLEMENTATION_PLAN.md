@@ -25,6 +25,8 @@
 
 ## 3. P0 task sequence
 
+> **Đã thay thế thứ tự:** xem `docs/P0_PLAN.md` (v0.2). Nội dung in-scope/out-of-scope/completion bên dưới vẫn áp dụng.
+
 ### P0-01 — Repository & project setup
 
 Goal:
