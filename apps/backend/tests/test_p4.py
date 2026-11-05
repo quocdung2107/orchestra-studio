@@ -377,3 +377,85 @@ def test_redaction_masks_known_and_pattern_secrets() -> None:
     assert "plain-secret-value-xyz" not in out
     assert "sk-ant-abcdefghijkl" not in out
     assert "abcdefghijklmnopqrstu" not in out
+
+
+# ---------------------------------------------------------------- P5: team.delegate (ADR-0026)
+
+
+def _tool_results(server: FakeServer, n: int) -> str:
+    return json.dumps(server.requests[n]["messages"], ensure_ascii=False)
+
+
+def test_model_agent_delegates_to_direct_report_sharing_one_ollama_slot(
+    client: TestClient,
+) -> None:
+    cid = seed(client)
+    roles = agents_by_role(client, cid)
+    cmo, writer = roles["Producer"], roles["Scriptwriter"]
+    assert writer["reports_to_agent_id"] == cmo["id"]
+    # Parent and child both on Ollama with max_concurrency 1: the parent must hand back
+    # its slot while waiting, or this deadlocks.
+    server = install_fake(
+        client,
+        "ollama",
+        [
+            ("tool", "team__delegate", {"to_role": "Scriptwriter", "title": "Viết kịch bản"}),
+            ("text", "Kịch bản của cấp dưới."),
+            ("text", "Đã duyệt kịch bản."),
+        ],
+    )
+    for a in (cmo, writer):
+        assert set_runtime(client, a, "ollama", {"model": "llama-test:8b"}).status_code == 201
+    tid = start_task(client, cid, cmo, title="Chiến dịch trà sen")
+    assert finished(client, tid)["status"] == "completed"
+
+    spec = next(t for t in server.requests[0]["tools"] if t["function"]["name"] == "team__delegate")
+    assert "Scriptwriter" in spec["function"]["parameters"]["properties"]["to_role"]["enum"]
+    assert "team__delegate" not in json.dumps(server.requests[1].get("tools", []))  # leaf agent
+    fed_back = _tool_results(server, 2)
+    assert '\\"status\\": \\"completed\\"' in fed_back and "Kịch bản của cấp dưới" in fed_back
+
+    tasks = client.get(f"{API}/companies/{cid}/tasks").json()
+    child = next(t for t in tasks if t["parent_task_id"] == tid)
+    assert child["assigned_agent_id"] == writer["id"] and child["status"] == "completed"
+
+
+def test_model_agent_cannot_delegate_outside_direct_reports(client: TestClient) -> None:
+    cid = seed(client)
+    roles = agents_by_role(client, cid)
+    cmo = roles["Producer"]
+    server = install_fake(
+        client,
+        "ollama",
+        [
+            ("tool", "team__delegate", {"to_role": "CEO", "title": "Làm hộ"}),
+            ("text", "Tự làm vậy."),
+        ],
+    )
+    assert set_runtime(client, cmo, "ollama", {"model": "llama-test:8b"}).status_code == 201
+    tid = start_task(client, cid, cmo)
+    assert finished(client, tid)["status"] == "completed"
+    assert "DELEGATION_NOT_ALLOWED" in _tool_results(server, 1)
+    tasks = client.get(f"{API}/companies/{cid}/tasks").json()
+    assert not [t for t in tasks if t["parent_task_id"] == tid]
+
+
+def test_model_agent_delegation_limit_per_run(client: TestClient) -> None:
+    from orchestra_backend.orchestrator.service import MAX_TOOL_DELEGATIONS
+
+    cid = seed(client)
+    roles = agents_by_role(client, cid)
+    cmo = roles["Producer"]
+    call = ("tool", "team__delegate", {"to_role": "Scriptwriter", "title": "Bản nháp"})
+    server = install_fake(
+        client, "ollama", [call] * (MAX_TOOL_DELEGATIONS + 1) + [("text", "Xong.")]
+    )
+    assert (
+        set_runtime(client, cmo, "ollama", {"model": "llama-test:8b", "max_turns": 10}).status_code
+        == 201
+    )
+    tid = start_task(client, cid, cmo)
+    assert finished(client, tid)["status"] == "completed"
+    assert "DELEGATION_LIMIT" in _tool_results(server, MAX_TOOL_DELEGATIONS + 1)
+    tasks = client.get(f"{API}/companies/{cid}/tasks").json()
+    assert len([t for t in tasks if t["parent_task_id"] == tid]) == MAX_TOOL_DELEGATIONS

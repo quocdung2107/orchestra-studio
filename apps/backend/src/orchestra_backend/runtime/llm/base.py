@@ -85,6 +85,9 @@ class BaseSettingsModel(BaseModel):
     max_turns: int = Field(default=8, ge=1, le=30)
 
 
+DELEGATE_TOOL = "team.delegate"
+
+
 def tool_name(key: str) -> str:
     return key.replace(".", "__")
 
@@ -263,7 +266,19 @@ class LlmRuntime(ABC):
                 if turn.tool_calls and turn.stop != "max_tokens":
                     results = []
                     for call in turn.tool_calls:
+                        waits = names.get(call.name) == DELEGATE_TOOL
+                        if waits:
+                            # The child run may need this runtime's slot (Ollama limit 1):
+                            # hand it back while we wait, then queue again (ADR-0026).
+                            self.release_slot()
+                            slot = False
                         results.append(await self._run_tool(req, names, call))
+                        if waits:
+                            cancelled, _ = await self._cancellable(run_id, self.acquire_slot())
+                            if cancelled:
+                                yield _ev("run.cancelled")
+                                return
+                            slot = True
                         if self._cancel[run_id].is_set():
                             yield _ev("run.cancelled")
                             return

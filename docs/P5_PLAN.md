@@ -30,7 +30,7 @@ Sandbox (SECURITY §7): P5 không thêm tool chạy lệnh. Worker chạy bằng
 | R4 | `RemoteWorkerRuntime` trong control plane + quét lease hết hạn | 2 |
 | R5 | Tiến trình `orchestra-worker` (chạy mock/ollama), `pnpm worker` | 2–3 |
 | R6 | Test: mất kết nối, replay, token hết hạn, thu hồi giữa chừng, checksum sai | 2 |
-| R7 | `team.delegate` cho agent model | 2 |
+| R7 | `team.delegate` cho agent model (xong, ADR-0026) | 2 |
 | R8 | Sao lưu/khôi phục + UI | 2 |
 | R9 | UI Worker: ghép nối, trạng thái, heartbeat, thu hồi; chọn chạy trên worker cho agent | 3 |
 | R10 | Kiểm tra trên Windows, README | 1–2 |

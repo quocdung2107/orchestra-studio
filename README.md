@@ -133,7 +133,7 @@ Lưu ý chi phí: gọi Claude/OpenAI tính tiền theo token. Mock vẫn là m�
 
 ## Giới hạn hiện tại (có chủ đích)
 
-- Agent chạy bằng model thật chưa tự giao việc cho agent khác (chỉ Mock làm được); để P5.
+- Agent chạy model thật giao việc qua tool `team.delegate` (chỉ cho cấp dưới trực tiếp, tối đa 5 lần mỗi run); các task con chạy lần lượt, không song song.
 - Model thật: không streaming, không tạm dừng/tiếp tục giữa chừng (chỉ hủy).
 - Bảng giá là file tĩnh có ngày; chi phí là ước tính, không phải hóa đơn. Chưa có giá OpenAI.
 - Tool tích hợp: `kb.search`, `doc.draft`, `workspace.write` (chỉ ghi trong `data/workspaces/<company>/<task>/`), `social.publish` (**mô phỏng**, không gọi mạng). Kết nối thật ở P4/P5 (ADR-0018).

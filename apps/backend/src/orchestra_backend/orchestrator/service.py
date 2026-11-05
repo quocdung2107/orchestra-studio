@@ -39,7 +39,7 @@ from orchestra_backend.metrics.pricing import load as load_prices
 from orchestra_backend.orchestrator.gateway import ToolGateway
 from orchestra_backend.orchestrator.tools_builtin import EXECUTORS
 from orchestra_backend.runtime import normalize
-from orchestra_backend.runtime.interface import RunRequest
+from orchestra_backend.runtime.interface import RunRequest, ToolResult
 from orchestra_backend.runtime.mock.scenarios import load_all
 from orchestra_backend.runtime.registry import RuntimeRegistry
 
@@ -47,6 +47,8 @@ log = logging.getLogger(__name__)
 T = TypeVar("T")
 Outcome = Literal["completed", "failed", "cancelled"]
 MAX_DELEGATION_DEPTH = 8
+MAX_TOOL_DELEGATIONS = 5  # per run (ADR-0026)
+DELEGATE_TOOL = "team.delegate"
 
 
 class NotSupportedError(AppError):
@@ -325,9 +327,9 @@ class Orchestrator:
                     task={"id": str(task.id), "title": task.title, "description": task.description},
                     context=ctx,
                     attempt=attempt,
-                    tools=self.gateway.port(run.id, None),
+                    tools=_DelegatingPort(self, self.gateway.port(run.id, None), run.id, depth),
                     settings=settings,
-                    tool_specs=self._tool_specs(s, agent),
+                    tool_specs=self._tool_specs(s, agent) + self._delegate_spec(s, agent),
                     credential=handle,
                 )
                 return run.id, req, task.max_attempts, ctx, preflight
@@ -565,6 +567,118 @@ class Orchestrator:
             )
         return specs
 
+    # ----- model agents delegating (ADR-0026) -----
+
+    @staticmethod
+    def _reports(s: Session, agent: Agent) -> list[Agent]:
+        return list(
+            s.scalars(
+                select(Agent)
+                .where(Agent.reports_to_agent_id == agent.id, Agent.status == "active")
+                .order_by(Agent.name)
+            )
+        )
+
+    def _delegate_spec(self, s: Session, agent: Agent) -> list[dict]:
+        reports = self._reports(s, agent)
+        if not reports:
+            return []
+        roles = sorted({a.role for a in reports})
+        who = ", ".join(f"{a.name} ({a.role})" for a in reports)
+        return [
+            {
+                "key": DELEGATE_TOOL,
+                "name": "Giao việc cho cấp dưới",
+                "description": (
+                    f"Giao một việc cho cấp dưới trực tiếp và chờ kết quả. Cấp dưới: {who}. "
+                    "Trả về tóm tắt và tên tài liệu cấp dưới tạo ra."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "to_role": {"type": "string", "enum": roles},
+                        "title": {"type": "string"},
+                        "description": {"type": "string"},
+                    },
+                    "required": ["to_role", "title"],
+                },
+            }
+        ]
+
+    async def delegate_tool(
+        self, run_id: uuid.UUID, params: dict, depth: int, count: int
+    ) -> ToolResult:
+        if count > MAX_TOOL_DELEGATIONS:
+            return ToolResult(
+                ok=False,
+                error_code="DELEGATION_LIMIT",
+                error_summary=f"Tối đa {MAX_TOOL_DELEGATIONS} lần giao việc mỗi run",
+            )
+        if depth >= MAX_DELEGATION_DEPTH:
+            return ToolResult(
+                ok=False, error_code="DELEGATION_TOO_DEEP", error_summary="Giao việc quá sâu"
+            )
+        role = str(params.get("to_role") or "").strip()
+        title = str(params.get("title") or "").strip()[:300]
+        description = str(params.get("description") or "")[:4000]
+        if not role or not title:
+            return ToolResult(
+                ok=False, error_code="TOOL_INPUT_INVALID", error_summary="Cần to_role và title"
+            )
+
+        def create(s: Session) -> uuid.UUID | ToolResult:
+            run = ex.get_run(s, run_id)
+            agent = s.get(Agent, run.agent_id)
+            assert agent is not None
+            target = next((a for a in self._reports(s, agent) if a.role == role), None)
+            if target is None:
+                return ToolResult(
+                    ok=False,
+                    error_code="DELEGATION_NOT_ALLOWED",
+                    error_summary=f"'{role}' không phải cấp dưới trực tiếp đang hoạt động",
+                )
+            parent = ex.get_task(s, run.task_id)  # type: ignore[arg-type]
+            child = ex.create_task(
+                s,
+                company_id=run.company_id,
+                title=title,
+                description=description,
+                required_role=role,
+                assigned_agent_id=target.id,
+                created_by=f"agent:{run.agent_id}",
+                parent_task_id=parent.id,
+                context=dict(parent.context_json or {}),
+            )
+            ex.record_delegation(s, run, child, role, None)
+            return child.id
+
+        created = await self._tx(create)
+        if isinstance(created, ToolResult):
+            return created
+        outcome = await self._execute_task(created, depth + 1)
+
+        def result(s: Session) -> ToolResult:
+            child = ex.get_task(s, created)
+            runs = ex.list_runs(s, child.company_id, task_id=child.id)
+            last = max(runs, key=lambda r: r.created_at) if runs else None
+            arts = [a.name for a in ex.list_artifacts_for_run(s, last.id)] if last else []
+            data = {
+                "task_id": str(child.id),
+                "status": outcome,
+                "summary": (last.result_summary if last else None) or "",
+                "artifacts": arts,
+            }
+            if outcome == "completed":
+                return ToolResult(ok=True, data=data)
+            return ToolResult(
+                ok=False,
+                data=data,
+                error_code="CHILD_TASK_" + outcome.upper(),
+                error_summary=(last.error_summary if last else None) or outcome,
+            )
+
+        return await self._tx(result)
+
     def _delegate(
         self, s: Session, run_id: uuid.UUID, ev: normalize.DelegationRequested, ctx: dict
     ) -> uuid.UUID:
@@ -615,3 +729,20 @@ class Orchestrator:
 
 def run_is_terminal(run: AgentRun) -> bool:
     return run.status in RUN_TERMINAL
+
+
+class _DelegatingPort:
+    """Routes `team.delegate` to the orchestrator; everything else to the Tool Gateway."""
+
+    def __init__(self, orch: Orchestrator, inner, run_id: uuid.UUID, depth: int) -> None:  # type: ignore[no-untyped-def]
+        self._o = orch
+        self._inner = inner
+        self._run_id = run_id
+        self._depth = depth
+        self._count = 0
+
+    async def call(self, tool_key: str, params: dict) -> ToolResult:
+        if tool_key == DELEGATE_TOOL:
+            self._count += 1
+            return await self._o.delegate_tool(self._run_id, params, self._depth, self._count)
+        return await self._inner.call(tool_key, params)
