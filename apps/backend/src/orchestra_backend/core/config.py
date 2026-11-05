@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     dev_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:5173", "http://127.0.0.1:5173"]
     )
+    templates_dir: Path = Field(default=_REPO_ROOT / "templates")
     # Directory with the built renderer (served at / when present).
     static_dir: Path | None = None
     run_migrations_on_startup: bool = True

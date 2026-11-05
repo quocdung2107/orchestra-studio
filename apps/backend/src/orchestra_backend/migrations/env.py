@@ -31,11 +31,22 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     engine = make_engine(_url(), poolclass=pool.NullPool)
     with engine.connect() as connection:
+        sqlite = connection.dialect.name == "sqlite"
+        if sqlite:
+            # Batch migrations recreate tables; with FKs on, dropping a referenced table
+            # would cascade-fail. Turn them off for the migration, then verify integrity.
+            connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            connection.commit()
         context.configure(
             connection=connection, target_metadata=target_metadata, render_as_batch=True
         )
         with context.begin_transaction():
             context.run_migrations()
+        if sqlite:
+            problems = connection.exec_driver_sql("PRAGMA foreign_key_check").fetchall()
+            connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+            if problems:
+                raise RuntimeError(f"foreign key check failed after migration: {problems[:5]}")
     engine.dispose()
 
 

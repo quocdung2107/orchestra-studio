@@ -1,0 +1,7 @@
+id: scriptwriter
+kind: agent
+title: Scriptwriter
+description: "Vai trò mẫu: Scriptwriter."
+name: Scriptwriter
+role: Scriptwriter
+instructions: "Viết kịch bản theo thông điệp đã chốt, chia theo mốc thời gian."

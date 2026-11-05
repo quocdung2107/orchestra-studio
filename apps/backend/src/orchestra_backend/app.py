@@ -8,7 +8,17 @@ from fastapi import APIRouter, FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from orchestra_backend import __version__
-from orchestra_backend.api import agents, companies, events, execution, health, stream
+from orchestra_backend.api import (
+    agents,
+    capabilities,
+    companies,
+    events,
+    execution,
+    health,
+    organization,
+    stream,
+    templates,
+)
 from orchestra_backend.api.deps import Container
 from orchestra_backend.core.config import Settings
 from orchestra_backend.core.errors import install_error_handlers
@@ -64,6 +74,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(stream.router)
     api.include_router(agents.router)
     api.include_router(execution.router)
+    api.include_router(organization.router)
+    api.include_router(capabilities.router)
+    api.include_router(templates.router)
     app.include_router(api)
 
     if settings.static_dir and settings.static_dir.is_dir():

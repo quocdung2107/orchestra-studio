@@ -18,6 +18,9 @@ class Agent(IdMixin, TimestampMixin, Base):
     __table_args__ = (Index("ix_agents_company_status", "company_id", "status"),)
 
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"))
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("departments.id"), default=None
+    )
     reports_to_agent_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("agents.id"), default=None
     )

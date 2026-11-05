@@ -79,7 +79,9 @@ async def start_scenario(
 )
 def seed_demo(c: ContainerDep) -> CompanyOut:
     with c.tx() as s:
-        return CompanyOut.model_validate(seed_demo_company(s, c.extras["registry"].ids()))
+        return CompanyOut.model_validate(
+            seed_demo_company(s, c.settings.templates_dir, c.extras["registry"].ids())
+        )
 
 
 # ----- tasks -----

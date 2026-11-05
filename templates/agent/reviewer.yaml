@@ -1,0 +1,7 @@
+id: reviewer
+kind: agent
+title: Reviewer
+description: "Vai trò mẫu: Reviewer."
+name: Reviewer
+role: Reviewer
+instructions: "Duyệt nội dung theo tiêu chí rõ ràng; nêu lý do khi từ chối."

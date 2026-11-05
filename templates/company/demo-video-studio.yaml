@@ -1,0 +1,69 @@
+# Template công ty mẫu (ADR-0014). Liệt kê department cha trước con, người quản lý trước cấp dưới.
+id: demo-video-studio
+kind: company
+title: Demo Video Studio
+description: "8 agent sản xuất video, chạy bằng Mock Runtime. Có phòng ban, skill, tool và quyền mẫu."
+company:
+  name: Demo Video Studio
+  description: "Tổ chức mẫu chạy bằng Mock Runtime (không gọi AI, không cần API key)."
+  max_tool_level: 2
+departments:
+  - {key: exec, name: Ban điều hành}
+  - {key: marketing, name: Marketing, parent: exec, max_tool_level: 1}
+  - {key: production, name: Sản xuất, parent: exec}
+  - {key: office, name: Văn phòng, parent: exec, max_tool_level: 1}
+skills:
+  - name: Nghiên cứu có nguồn
+    description: Thu thập thông tin và ghi rõ nguồn.
+    instructions: "Mỗi khẳng định phải kèm nguồn. Tách rõ dữ kiện và suy luận."
+    input_hints: [chủ đề, đối tượng]
+  - name: Viết kịch bản video
+    description: Kịch bản ngắn theo mốc thời gian.
+    instructions: "Chia kịch bản theo mốc giây. Mỗi mốc có mục tiêu rõ ràng."
+    input_hints: [thông điệp, độ dài]
+  - name: Tổng hợp dự án
+    description: Tóm tắt kết quả và bài học.
+    instructions: "Liệt kê kết quả, quyết định đã chốt và bài học."
+tools:
+  - key: kb.search
+    name: Tìm trong kho tri thức
+    description: Đọc tài liệu đã được duyệt trong company.
+    permission_level: 0
+    input_schema: {type: object, properties: {query: {type: string}}, required: [query]}
+  - key: doc.draft
+    name: Soạn tài liệu nháp
+    description: Tạo bản nháp, chưa lưu chính thức.
+    permission_level: 1
+    input_schema: {type: object, properties: {title: {type: string}, body: {type: string}}}
+  - key: workspace.write
+    name: Ghi file trong workspace
+    description: Ghi file trong thư mục làm việc của task.
+    permission_level: 2
+    policy: {allowed_paths: ["workspace/"], timeout_seconds: 30, idempotent: true}
+  - key: social.publish
+    name: Đăng lên mạng xã hội
+    description: Hành động bên ngoài, luôn cần phê duyệt.
+    permission_level: 3
+    policy: {network: allowlist, allowed_domains: ["example.social"], requires_approval: true}
+agents:
+  - {key: ceo, name: "An (CEO)", role: CEO, department: exec,
+     instructions: "Chia mục tiêu thành việc cho các bộ phận và chốt kết quả."}
+  - {key: cmo, name: "Bình (CMO)", role: CMO, department: marketing, reports_to: ceo,
+     instructions: "Chịu trách nhiệm thông điệp và khán giả."}
+  - {key: researcher, name: "Chi (Researcher)", role: Researcher, department: marketing,
+     reports_to: cmo, instructions: "Thu thập và tóm tắt dữ liệu có nguồn.",
+     skills: [Nghiên cứu có nguồn], tools: [kb.search]}
+  - {key: strategist, name: "Dũng (Strategist)", role: Strategist, department: marketing,
+     reports_to: cmo, instructions: "Đề xuất và so sánh phương án thông điệp.",
+     tools: [kb.search, doc.draft]}
+  - {key: producer, name: "Em (Producer)", role: Producer, department: production,
+     reports_to: ceo, instructions: "Điều phối sản xuất nội dung.", tools: [workspace.write]}
+  - {key: scriptwriter, name: "Giang (Scriptwriter)", role: Scriptwriter, department: production,
+     reports_to: producer, instructions: "Viết kịch bản theo thông điệp.",
+     skills: [Viết kịch bản video], tools: [doc.draft]}
+  - {key: reviewer, name: "Hà (Reviewer)", role: Reviewer, department: production,
+     reports_to: producer, instructions: "Duyệt nội dung theo tiêu chí rõ ràng.",
+     tools: [kb.search]}
+  - {key: secretary, name: "Khánh (Secretary)", role: Secretary, department: office,
+     reports_to: ceo, instructions: "Tổng hợp kết quả và bài học.",
+     skills: [Tổng hợp dự án], tools: [doc.draft]}

@@ -25,6 +25,7 @@ from orchestra_backend.events.catalog import (
     AgentVersionCreated,
 )
 from orchestra_backend.events.service import append_event
+from orchestra_backend.organization.service import validate_agent_placement
 
 SOURCE = "api.agents"
 
@@ -115,16 +116,21 @@ def create_agent(
 ) -> Agent:
     get_active_company(session, company_id)
     _check_runtime(data.runtime.runtime_id, known_runtimes)
-    if data.reports_to_agent_id is not None:
-        manager = get_agent(session, data.reports_to_agent_id)
-        if manager.company_id != company_id:
-            raise DomainValidationError("Manager must belong to the same company")
     agent = Agent(
         company_id=company_id,
         name=data.name,
         role=data.role,
         description=data.description,
+        department_id=data.department_id,
         reports_to_agent_id=data.reports_to_agent_id,
+    )
+    validate_agent_placement(
+        session,
+        agent,
+        department_id=data.department_id,
+        reports_to_agent_id=data.reports_to_agent_id,
+        check_department=True,
+        check_manager=True,
     )
     session.add(agent)
     session.flush()
@@ -152,14 +158,24 @@ def update_agent(session: Session, agent_id: uuid.UUID, data: AgentUpdate) -> Ag
     agent = get_agent(session, agent_id)
     if agent.status == "archived":
         raise InvalidStateError("Agent is archived")
-    changes = {
-        k: v.strip() if isinstance(v, str) else v
-        for k, v in data.model_dump(exclude_unset=True).items()
-        if v is not None
-    }
-    changes = {k: v for k, v in changes.items() if getattr(agent, k) != v}
-    if any(isinstance(v, str) and not v for k, v in changes.items() if k in {"name", "role"}):
+    fields = data.model_dump(exclude_unset=True)
+    for key in ("name", "role", "description"):
+        if key in fields:
+            if fields[key] is None:
+                fields.pop(key)
+            else:
+                fields[key] = fields[key].strip()
+    if any(not fields.get(k, "x") for k in ("name", "role")):
         raise DomainValidationError("name/role must not be blank")
+    changes = {k: v for k, v in fields.items() if getattr(agent, k) != v}
+    validate_agent_placement(
+        session,
+        agent,
+        department_id=changes.get("department_id"),
+        reports_to_agent_id=changes.get("reports_to_agent_id"),
+        check_department="department_id" in changes,
+        check_manager="reports_to_agent_id" in changes,
+    )
     if changes:
         for k, v in changes.items():
             setattr(agent, k, v)
@@ -205,6 +221,17 @@ def transition(session: Session, agent_id: uuid.UUID, action: str) -> Agent:
     if action == "activate" and agent.current_version_id is None:
         raise InvalidStateError("Agent has no version to activate")
     (agent.status,) = rule["to"]
+    if action == "archive":
+        # Don't leave subordinates pointing at an archived manager.
+        for sub in session.scalars(select(Agent).where(Agent.reports_to_agent_id == agent.id)):
+            sub.reports_to_agent_id = None
+            append_event(
+                session,
+                company_id=sub.company_id,
+                event_type="agent.updated",
+                payload=AgentUpdated(agent_id=sub.id, changes={"reports_to_agent_id": None}),
+                source=SOURCE,
+            )
     event_type = {
         "activate": "agent.activated",
         "deactivate": "agent.deactivated",

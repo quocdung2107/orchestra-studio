@@ -16,7 +16,9 @@ SOURCE = "api.companies"
 
 
 def create_company(session: Session, data: CompanyCreate) -> Company:
-    company = Company(name=data.name, description=data.description)
+    company = Company(
+        name=data.name, description=data.description, max_tool_level=data.max_tool_level
+    )
     session.add(company)
     session.flush()
     session.add(EventStream(company_id=company.id, last_sequence=0))

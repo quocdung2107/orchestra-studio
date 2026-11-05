@@ -45,6 +45,77 @@ class AgentVersionCreated(AgentRef):
     version_number: int
 
 
+class DepartmentCreated(Payload):
+    department_id: uuid.UUID
+    name: str
+    parent_department_id: uuid.UUID | None = None
+
+
+class DepartmentUpdated(Payload):
+    department_id: uuid.UUID
+    changes: dict[str, Any]
+
+
+class DepartmentRef(Payload):
+    department_id: uuid.UUID
+
+
+class SkillCreated(Payload):
+    skill_id: uuid.UUID
+    name: str
+
+
+class SkillVersionCreated(Payload):
+    skill_id: uuid.UUID
+    version_id: uuid.UUID
+    version_number: int
+
+
+class SkillRef(Payload):
+    skill_id: uuid.UUID
+
+
+class AgentSkillAttached(Payload):
+    agent_id: uuid.UUID
+    skill_id: uuid.UUID
+    skill_version_id: uuid.UUID
+    version_number: int
+
+
+class AgentSkillDetached(Payload):
+    agent_id: uuid.UUID
+    skill_id: uuid.UUID
+
+
+class ToolDefined(Payload):
+    """Full tool definition at a version (the event log is the tool's version history)."""
+
+    tool_id: uuid.UUID
+    key: str
+    version: int
+    definition: dict[str, Any]
+
+
+class ToolRef(Payload):
+    tool_id: uuid.UUID
+
+
+class AgentToolGranted(Payload):
+    agent_id: uuid.UUID
+    tool_id: uuid.UUID
+    permission_level: int
+
+
+class AgentToolRevoked(Payload):
+    agent_id: uuid.UUID
+    tool_id: uuid.UUID
+
+
+class TemplateInstantiated(Payload):
+    template_id: str
+    template_kind: str
+
+
 class TaskCreated(Payload):
     task_id: uuid.UUID
     title: str
@@ -121,6 +192,20 @@ CATALOG: dict[str, type[Payload]] = {
     "agent.activated": AgentRef,
     "agent.deactivated": AgentRef,
     "agent.archived": AgentRef,
+    "department.created": DepartmentCreated,
+    "department.updated": DepartmentUpdated,
+    "department.archived": DepartmentRef,
+    "skill.created": SkillCreated,
+    "skill.version_created": SkillVersionCreated,
+    "skill.archived": SkillRef,
+    "agent.skill_attached": AgentSkillAttached,
+    "agent.skill_detached": AgentSkillDetached,
+    "tool.created": ToolDefined,
+    "tool.updated": ToolDefined,
+    "tool.archived": ToolRef,
+    "agent.tool_granted": AgentToolGranted,
+    "agent.tool_revoked": AgentToolRevoked,
+    "template.instantiated": TemplateInstantiated,
     "task.created": TaskCreated,
     "task.assigned": TaskAssigned,
     "task.status_changed": TaskStatusChanged,

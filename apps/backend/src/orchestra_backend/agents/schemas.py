@@ -12,7 +12,8 @@ _SECRET_HINTS = ("key", "secret", "token", "password", "credential")
 
 
 class AgentDefinition(BaseModel):
-    """Provider-neutral definition (ADR-0004 minimal schema). Extended in P1."""
+    """Provider-neutral definition. `skills`/`tools` string lists are kept for compatibility
+    only; real assignments live in agent_skills / agent_tools (ADR-0012, ADR-0013)."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -48,6 +49,7 @@ class AgentCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     role: str = Field(min_length=1, max_length=100)
     description: str = Field(default="", max_length=2000)
+    department_id: uuid.UUID | None = None
     reports_to_agent_id: uuid.UUID | None = None
     definition: AgentDefinition = Field(default_factory=AgentDefinition)
     runtime: RuntimePreference = Field(default_factory=RuntimePreference)
@@ -62,11 +64,15 @@ class AgentCreate(BaseModel):
 
 
 class AgentUpdate(BaseModel):
+    """Fields left out are unchanged; explicit null clears department/manager."""
+
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(default=None, min_length=1, max_length=200)
     role: str | None = Field(default=None, min_length=1, max_length=100)
     description: str | None = Field(default=None, max_length=2000)
+    department_id: uuid.UUID | None = None
+    reports_to_agent_id: uuid.UUID | None = None
 
 
 class AgentVersionCreate(BaseModel):
@@ -91,6 +97,7 @@ class AgentOut(BaseModel):
 
     id: uuid.UUID
     company_id: uuid.UUID
+    department_id: uuid.UUID | None
     reports_to_agent_id: uuid.UUID | None
     name: str
     role: str

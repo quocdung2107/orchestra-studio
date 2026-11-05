@@ -19,6 +19,7 @@ class CompanyCreate(BaseModel):
 
     name: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=2000)
+    max_tool_level: int = Field(default=1, ge=0, le=3)
 
     _name = field_validator("name")(_strip_required)
 
@@ -28,6 +29,7 @@ class CompanyUpdate(BaseModel):
 
     name: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
+    max_tool_level: int | None = Field(default=None, ge=0, le=3)
 
     @field_validator("name")
     @classmethod
@@ -42,5 +44,6 @@ class CompanyOut(BaseModel):
     name: str
     description: str
     status: Literal["active", "archived"]
+    max_tool_level: int
     created_at: datetime
     updated_at: datetime
