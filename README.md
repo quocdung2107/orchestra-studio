@@ -30,9 +30,9 @@ Cần cài một lần (PowerShell):
 winget install --id Git.Git -e
 # Python toolchain (ADR-0002)
 winget install --id astral-sh.uv -e
-# Node.js LTS, rồi bật pnpm qua corepack (ADR-0002)
+# Node.js LTS, rồi cài pnpm (ADR-0002)
 winget install --id OpenJS.NodeJS.LTS -e
-corepack enable
+npm install -g pnpm
 ```
 
 Mở terminal mới rồi kiểm tra:
@@ -44,7 +44,7 @@ node --version
 pnpm --version
 ```
 
-Nếu `pnpm` chưa nhận, chạy `corepack prepare pnpm@latest --activate`.
+Node.js từ bản 25 không còn kèm Corepack, nên không dùng `corepack enable`. Nếu `pnpm` vẫn chưa nhận sau khi cài, đóng và mở lại terminal.
 
 Lệnh chạy backend và frontend sẽ được thêm vào đây ở task A2 và C1.
 
