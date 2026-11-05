@@ -340,3 +340,13 @@ def test_verify_lists_models(provider: str) -> None:
     rt = make_runtime(provider, FakeServer(provider, []))
     ok, msg = asyncio.run(rt.verify(SECRET[provider]))
     assert ok, msg
+
+
+def test_ollama_thinking_is_off_by_default_and_configurable() -> None:
+    server = FakeServer("ollama", [("text", "a"), ("text", "b")])
+    rt = make_runtime("ollama", server)
+    run(rt, _request("ollama"))
+    assert server.requests[0]["think"] is False
+    run(rt, _request("ollama", think=True))
+    assert server.requests[1]["think"] is True
+    assert rt.validate_settings(settings_for("ollama"))["think"] is False

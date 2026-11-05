@@ -113,6 +113,12 @@ export function RuntimeSettingsForm({
               onChange={(e) => set("max_tokens", e.target.value ? Number(e.target.value) : "")}
             />
           </div>
+          {value.runtime_id === "ollama" && (
+            <label className="text-sm block">
+              <input type="checkbox" checked={s.think === true} onChange={(e) => set("think", e.target.checked)} /> Cho model
+              suy nghĩ trước khi trả lời (kỹ hơn nhưng chậm hơn nhiều trên máy yếu)
+            </label>
+          )}
           <p className="text-xs text-slate-500">
             {value.runtime_id === "ollama"
               ? "Chạy trên máy này; không tốn phí API. Run vượt giới hạn đồng thời sẽ xếp hàng."

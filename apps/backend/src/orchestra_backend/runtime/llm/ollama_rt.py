@@ -28,6 +28,9 @@ class OllamaSettings(BaseSettingsModel):
     model: str = Field(min_length=1, max_length=200)
     num_ctx: int | None = Field(default=None, ge=512, le=262144)
     max_tokens: int | None = Field(default=None, ge=16, le=65536)
+    # Thinking models (e.g. qwen3) reason before answering. Off by default: on small local
+    # hardware it multiplies latency. None = let the model decide (field not sent).
+    think: bool | None = False
 
 
 class _Session(ProviderSession):
@@ -54,6 +57,8 @@ class _Session(ProviderSession):
         for r in results or []:
             self.messages.append({"role": "tool", "content": r.content, "tool_name": r.call.name})
         body: dict[str, Any] = {"model": self.s.model, "messages": self.messages, "stream": False}
+        if self.s.think is not None:
+            body["think"] = self.s.think
         if self.tools:
             body["tools"] = self.tools
         options: dict[str, Any] = {}
