@@ -66,13 +66,35 @@ def get_agent(session: Session, agent_id: uuid.UUID) -> Agent:
     return agent
 
 
-def _check_runtime(runtime_id: str, known_runtimes: set[str]) -> None:
+def _check_runtime(
+    session: Session, company_id: uuid.UUID, runtime: RuntimePreference, known_runtimes: set[str]
+) -> None:
+    """Runtime must exist; settings must satisfy that runtime; a referenced credential must be
+    usable by this company and provider (ADR-0021, ADR-0022)."""
+    runtime_id = runtime.runtime_id
     if runtime_id not in known_runtimes:
         raise DomainValidationError(
             f"Unknown runtime: {runtime_id}",
             code="unknown_runtime",
             details={"known": sorted(known_runtimes)},
         )
+    validate = getattr(known_runtimes, "validate_settings", None)
+    if validate is not None:
+        runtime.settings = validate(runtime_id, runtime.settings)
+    raw = runtime.settings.get("credential_id")
+    if raw:
+        from orchestra_backend.credentials import service as creds
+
+        try:
+            cred = creds.get(session, uuid.UUID(str(raw)))
+        except ValueError as exc:
+            raise DomainValidationError("Invalid credential id", code="invalid_credential") from exc
+        provider = getattr(
+            getattr(known_runtimes, "get", lambda _x: None)(runtime_id), "provider", None
+        )
+        problem = creds.check_usable(cred, provider or cred.provider, company_id)
+        if problem is not None:
+            raise DomainValidationError(problem[1], code="credential_not_usable")
 
 
 def _add_version(
@@ -115,7 +137,7 @@ def create_agent(
     created_by: str = "user",
 ) -> Agent:
     get_active_company(session, company_id)
-    _check_runtime(data.runtime.runtime_id, known_runtimes)
+    _check_runtime(session, company_id, data.runtime, known_runtimes)
     agent = Agent(
         company_id=company_id,
         name=data.name,
@@ -195,7 +217,7 @@ def create_version(
     agent = get_agent(session, agent_id)
     if agent.status == "archived":
         raise InvalidStateError("Agent is archived")
-    _check_runtime(data.runtime.runtime_id, known_runtimes)
+    _check_runtime(session, agent.company_id, data.runtime, known_runtimes)
     return _add_version(session, agent, data.definition, data.runtime, "user")
 
 

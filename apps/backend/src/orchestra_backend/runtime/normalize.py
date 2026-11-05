@@ -76,6 +76,17 @@ class RoleChangeProposed(_Strict):
     rationale: str = Field(min_length=1, max_length=2000)
 
 
+class Usage(_Strict):
+    """Token usage of one model call (ADR-0023). Cost is computed by the backend, not here."""
+
+    provider: str = Field(min_length=1, max_length=30)
+    model: str = Field(min_length=1, max_length=200)
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
+    source: str = Field(pattern=r"^(provider_reported|local_runtime_reported)$")
+    duration_ms: int | None = Field(default=None, ge=0)
+
+
 RUNTIME_EVENT_SCHEMAS: dict[str, type[_Strict]] = {
     "run.started": Started,
     "run.progress": Progress,
@@ -88,6 +99,7 @@ RUNTIME_EVENT_SCHEMAS: dict[str, type[_Strict]] = {
     "run.delegation.parallel_requested": ParallelDelegation,
     "run.lesson.proposed": LessonProposed,
     "run.role_change.proposed": RoleChangeProposed,
+    "run.usage": Usage,
 }
 
 # Internal name -> persisted name. Delegation and artifacts get domain handling.
@@ -103,6 +115,7 @@ PERSISTED_NAME = {
     "run.delegation.parallel_requested": "agent.run.delegated",
     "run.lesson.proposed": "lesson.proposed",
     "run.role_change.proposed": "role_change.proposed",
+    "run.usage": "agent.run.usage_recorded",
 }
 
 

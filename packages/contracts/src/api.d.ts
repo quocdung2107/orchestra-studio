@@ -440,6 +440,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/kpis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Company Kpis */
+        get: operations["company_kpis_api_v1_companies__company_id__kpis_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/lessons": {
         parameters: {
             query?: never;
@@ -595,6 +612,78 @@ export interface paths {
         put?: never;
         /** Create Tool */
         post: operations["create_tool_api_v1_companies__company_id__tools_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Credentials */
+        get: operations["list_credentials_api_v1_credentials_get"];
+        put?: never;
+        /** Create Credential */
+        post: operations["create_credential_api_v1_credentials_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credentials/{credential_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke Credential */
+        post: operations["revoke_credential_api_v1_credentials__credential_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credentials/{credential_id}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate Credential */
+        post: operations["rotate_credential_api_v1_credentials__credential_id__rotate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/credentials/{credential_id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Credential
+         * @description Makes one cheap read-only call to the provider (list models).
+         */
+        post: operations["verify_credential_api_v1_credentials__credential_id__verify_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -806,6 +895,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runtimes/{runtime_id}/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Runtime Health
+         * @description Live health. For Ollama this includes models, loaded models and limits (ADR-0024).
+         */
+        get: operations["runtime_health_api_v1_runtimes__runtime_id__health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scenarios": {
         parameters: {
             query?: never;
@@ -815,6 +924,23 @@ export interface paths {
         };
         /** List Scenarios */
         get: operations["list_scenarios_api_v1_scenarios_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/secret-store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Secret Store Info */
+        get: operations["secret_store_info_api_v1_secret_store_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1145,6 +1271,48 @@ export interface components {
              */
             updated_at: string;
         };
+        /** AgentKpi */
+        AgentKpi: {
+            /** Active */
+            active: number;
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /** Agent Name */
+            agent_name: string;
+            /** Avg Duration Ms */
+            avg_duration_ms: number | null;
+            /** Cancelled */
+            cancelled: number;
+            /** Completed */
+            completed: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Failed */
+            failed: number;
+            /** Llm Runs */
+            llm_runs: number;
+            /** Model Calls */
+            model_calls: number;
+            /** Priced Runs */
+            priced_runs: number;
+            /** Retries */
+            retries: number;
+            /** Role */
+            role: string;
+            /** Runs */
+            runs: number;
+            /** Success Rate */
+            success_rate: number | null;
+            /** Tokens Input */
+            tokens_input: number;
+            /** Tokens Output */
+            tokens_output: number;
+            /** Unpriced Runs */
+            unpriced_runs: number;
+        };
         /** AgentOut */
         AgentOut: {
             /**
@@ -1439,6 +1607,73 @@ export interface components {
             /** Name */
             name?: string | null;
         };
+        /** CredentialCreate */
+        CredentialCreate: {
+            /** Company Id */
+            company_id?: string | null;
+            /** Env Var */
+            env_var?: string | null;
+            /** Label */
+            label: string;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "anthropic" | "openai";
+            /** Secret */
+            secret?: string | null;
+        };
+        /**
+         * CredentialOut
+         * @description Never contains the secret (ADR-0021).
+         */
+        CredentialOut: {
+            /** Company Id */
+            company_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Env Var */
+            env_var?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Last Verified At */
+            last_verified_at: string | null;
+            /** Last Verify Message */
+            last_verify_message: string | null;
+            /** Last Verify Ok */
+            last_verify_ok: boolean | null;
+            /** Provider */
+            provider: string;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Rotated At */
+            rotated_at: string | null;
+            /** Status */
+            status: string;
+            /** Store */
+            store: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** CredentialRotate */
+        CredentialRotate: {
+            /**
+             * Secret
+             * Format: password
+             */
+            secret: string;
+        };
         /** DepartmentCreate */
         DepartmentCreate: {
             /**
@@ -1676,6 +1911,72 @@ export interface components {
             content?: string | null;
             /** Title */
             title?: string | null;
+        };
+        /** KpiFigures */
+        KpiFigures: {
+            /** Active */
+            active: number;
+            /** Avg Duration Ms */
+            avg_duration_ms: number | null;
+            /** Cancelled */
+            cancelled: number;
+            /** Completed */
+            completed: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Failed */
+            failed: number;
+            /** Llm Runs */
+            llm_runs: number;
+            /** Model Calls */
+            model_calls: number;
+            /** Priced Runs */
+            priced_runs: number;
+            /** Retries */
+            retries: number;
+            /** Runs */
+            runs: number;
+            /** Success Rate */
+            success_rate: number | null;
+            /** Tokens Input */
+            tokens_input: number;
+            /** Tokens Output */
+            tokens_output: number;
+            /** Unpriced Runs */
+            unpriced_runs: number;
+        };
+        /** KpiReport */
+        KpiReport: {
+            /** By Agent */
+            by_agent: components["schemas"]["AgentKpi"][];
+            /** By Runtime */
+            by_runtime: components["schemas"]["RuntimeKpi"][];
+            /**
+             * Company Id
+             * Format: uuid
+             */
+            company_id: string;
+            /** Days */
+            days: number;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Price Table */
+            price_table: {
+                [key: string]: unknown;
+            };
+            /**
+             * Since
+             * Format: date-time
+             */
+            since: string;
+            /** Sources */
+            sources: {
+                [key: string]: components["schemas"]["SourceLabel"];
+            };
+            totals: components["schemas"]["KpiFigures"];
         };
         /** LayoutUpdate */
         LayoutUpdate: {
@@ -1969,8 +2270,54 @@ export interface components {
             };
             /** Display Name */
             display_name: string;
+            /** Provider */
+            provider?: string | null;
+            /**
+             * Requires Credential
+             * @default false
+             */
+            requires_credential?: boolean;
             /** Runtime Id */
             runtime_id: string;
+            /** Settings Schema */
+            settings_schema?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** RuntimeKpi */
+        RuntimeKpi: {
+            /** Active */
+            active: number;
+            /** Avg Duration Ms */
+            avg_duration_ms: number | null;
+            /** Cancelled */
+            cancelled: number;
+            /** Completed */
+            completed: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Failed */
+            failed: number;
+            /** Llm Runs */
+            llm_runs: number;
+            /** Model Calls */
+            model_calls: number;
+            /** Priced Runs */
+            priced_runs: number;
+            /** Retries */
+            retries: number;
+            /** Runs */
+            runs: number;
+            /** Runtime Id */
+            runtime_id: string;
+            /** Success Rate */
+            success_rate: number | null;
+            /** Tokens Input */
+            tokens_input: number;
+            /** Tokens Output */
+            tokens_output: number;
+            /** Unpriced Runs */
+            unpriced_runs: number;
         };
         /**
          * RuntimePreference
@@ -2039,6 +2386,15 @@ export interface components {
             engine: "fts5" | "like";
             /** Hits */
             hits: components["schemas"]["SearchHit"][];
+        };
+        /** SecretStoreInfo */
+        SecretStoreInfo: {
+            /** Description */
+            description: string;
+            /** Kind */
+            kind: string;
+            /** Secure */
+            secure: boolean;
         };
         /** SkillCreate */
         SkillCreate: {
@@ -2123,6 +2479,15 @@ export interface components {
             skill_id: string;
             /** Version Number */
             version_number: number;
+        };
+        /** SourceLabel */
+        SourceLabel: {
+            /** Confidence */
+            confidence: string;
+            /** Note */
+            note: string;
+            /** Source */
+            source: string;
         };
         /** TaskCreate */
         TaskCreate: {
@@ -2347,6 +2712,13 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VerifyResult */
+        VerifyResult: {
+            /** Message */
+            message: string;
+            /** Ok */
+            ok: boolean;
         };
     };
     responses: never;
@@ -4019,6 +4391,48 @@ export interface operations {
             };
         };
     };
+    company_kpis_api_v1_companies__company_id__kpis_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiReport"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_lessons_api_v1_companies__company_id__lessons_get: {
         parameters: {
             query?: never;
@@ -4731,6 +5145,257 @@ export interface operations {
             };
         };
     };
+    list_credentials_api_v1_credentials_get: {
+        parameters: {
+            query?: {
+                company_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialOut"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_credential_api_v1_credentials_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    revoke_credential_api_v1_credentials__credential_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credential_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    rotate_credential_api_v1_credentials__credential_id__rotate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credential_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialRotate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    verify_credential_api_v1_credentials__credential_id__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                credential_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerifyResult"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     seed_demo_api_v1_demo_seed_post: {
         parameters: {
             query?: never;
@@ -5351,6 +6016,57 @@ export interface operations {
             };
         };
     };
+    runtime_health_api_v1_runtimes__runtime_id__health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runtime_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     list_scenarios_api_v1_scenarios_get: {
         parameters: {
             query?: never;
@@ -5367,6 +6083,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScenarioInfo"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    secret_store_info_api_v1_secret_store_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecretStoreInfo"];
                 };
             };
             /** @description Not Found */

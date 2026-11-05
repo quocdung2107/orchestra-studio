@@ -13,10 +13,12 @@ from orchestra_backend.api import (
     approvals,
     capabilities,
     companies,
+    credentials,
     events,
     execution,
     health,
     knowledge,
+    metrics,
     organization,
     stream,
     templates,
@@ -24,10 +26,15 @@ from orchestra_backend.api import (
 from orchestra_backend.api.deps import Container
 from orchestra_backend.core.config import Settings
 from orchestra_backend.core.errors import install_error_handlers
+from orchestra_backend.core.redact import install_log_redaction
 from orchestra_backend.core.security import LocalSecurityMiddleware
+from orchestra_backend.credentials.store import make_store
 from orchestra_backend.db import migrate
 from orchestra_backend.db.session import make_engine, make_session_factory
 from orchestra_backend.orchestrator.service import Orchestrator
+from orchestra_backend.runtime.llm.anthropic_rt import AnthropicRuntime
+from orchestra_backend.runtime.llm.ollama_rt import OllamaRuntime
+from orchestra_backend.runtime.llm.openai_rt import OpenAIRuntime
 from orchestra_backend.runtime.mock.runtime import MockRuntime
 from orchestra_backend.runtime.registry import RuntimeRegistry
 
@@ -51,10 +58,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         settings=settings, engine=engine, session_factory=make_session_factory(engine)
     )
 
+    install_log_redaction()
+    secrets = make_store(settings.secret_store)
     registry = RuntimeRegistry()
     registry.register(MockRuntime(step_delay_ms=settings.mock_step_delay_ms))
-    orchestrator = Orchestrator(container, registry)
-    container.extras.update(registry=registry, orchestrator=orchestrator)
+    registry.register(
+        OllamaRuntime(
+            base_url=settings.ollama_url,
+            max_concurrency=settings.ollama_max_concurrency,
+            timeout_s=settings.model_timeout_s,
+        )
+    )
+    registry.register(AnthropicRuntime(timeout_s=settings.model_timeout_s))
+    registry.register(OpenAIRuntime(timeout_s=settings.model_timeout_s))
+    orchestrator = Orchestrator(container, registry, secrets)
+    container.extras.update(registry=registry, orchestrator=orchestrator, secrets=secrets)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -78,6 +96,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(execution.router)
     api.include_router(organization.router)
     api.include_router(capabilities.router)
+    api.include_router(credentials.router)
+    api.include_router(metrics.router)
     api.include_router(templates.router)
     api.include_router(approvals.router)
     api.include_router(knowledge.router)

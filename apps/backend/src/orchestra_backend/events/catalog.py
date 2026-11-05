@@ -272,8 +272,34 @@ class ScenarioStarted(Payload):
     root_task_id: uuid.UUID
 
 
+class RunUsageRecorded(RunRef):
+    provider: str
+    model: str
+    input_tokens: int
+    output_tokens: int
+    token_source: str
+    cost_usd: float | None = None
+    cost_source: str | None = None
+    price_as_of: str | None = None
+
+
+class CredentialChanged(Payload):
+    """Never contains the secret (ADR-0021)."""
+
+    credential_id: uuid.UUID
+    provider: str
+    label: str
+    store: str
+    ok: bool | None = None
+
+
 CATALOG: dict[str, type[Payload]] = {
     "company.created": CompanyCreated,
+    "agent.run.usage_recorded": RunUsageRecorded,
+    "credential.created": CredentialChanged,
+    "credential.rotated": CredentialChanged,
+    "credential.revoked": CredentialChanged,
+    "credential.verified": CredentialChanged,
     "company.updated": CompanyUpdated,
     "company.archived": CompanyArchived,
     "agent.created": AgentCreated,

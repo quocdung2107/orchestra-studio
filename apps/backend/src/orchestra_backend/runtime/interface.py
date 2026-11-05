@@ -48,6 +48,11 @@ class RunRequest:
     context: dict[str, Any] = field(default_factory=dict)
     attempt: int = 1
     tools: ToolPort | None = None
+    # P4 (ADR-0022): runtime settings from the agent version, tool specs for the agent's
+    # granted tools, and a lazily-revealed secret. None of these are persisted.
+    settings: dict[str, Any] = field(default_factory=dict)
+    tool_specs: list[dict[str, Any]] = field(default_factory=list)
+    credential: Any = None  # credentials.store.SecretHandle
 
 
 @dataclass(frozen=True)

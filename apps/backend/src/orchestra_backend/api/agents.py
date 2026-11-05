@@ -27,8 +27,8 @@ router = APIRouter(
 )
 
 
-def _known(c: ContainerDep) -> set[str]:
-    return c.extras["registry"].ids()
+def _known(c: ContainerDep):  # noqa: ANN202 - RuntimeRegistry acts as the known-runtime set
+    return c.extras["registry"]
 
 
 @router.get("/companies/{company_id}/agents", response_model=list[AgentOut])

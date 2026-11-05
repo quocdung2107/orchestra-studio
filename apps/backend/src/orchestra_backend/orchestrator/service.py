@@ -21,16 +21,23 @@ from sqlalchemy.orm import Session
 from orchestra_backend.agents.models import Agent, AgentVersion
 from orchestra_backend.api.deps import Container
 from orchestra_backend.approvals import service as approvals
+from orchestra_backend.capabilities import service as caps
 from orchestra_backend.companies.models import Company
 from orchestra_backend.companies.service import get_active_company
 from orchestra_backend.core.errors import AppError, InvalidStateError, NotFoundError
+from orchestra_backend.core.redact import redact
+from orchestra_backend.credentials import service as creds
+from orchestra_backend.credentials.store import SecretStore
 from orchestra_backend.events.catalog import ScenarioStarted, TaskRef
 from orchestra_backend.events.service import append_event
 from orchestra_backend.execution import service as ex
 from orchestra_backend.execution.models import RUN_TERMINAL, TASK_TERMINAL, AgentRun, Task
 from orchestra_backend.knowledge import service as kn
 from orchestra_backend.knowledge.schemas import LessonCreate
+from orchestra_backend.metrics import service as metrics
+from orchestra_backend.metrics.pricing import load as load_prices
 from orchestra_backend.orchestrator.gateway import ToolGateway
+from orchestra_backend.orchestrator.tools_builtin import EXECUTORS
 from orchestra_backend.runtime import normalize
 from orchestra_backend.runtime.interface import RunRequest
 from orchestra_backend.runtime.mock.scenarios import load_all
@@ -48,9 +55,15 @@ class NotSupportedError(AppError):
 
 
 class Orchestrator:
-    def __init__(self, container: Container, registry: RuntimeRegistry) -> None:
+    def __init__(
+        self,
+        container: Container,
+        registry: RuntimeRegistry,
+        secrets: SecretStore | None = None,
+    ) -> None:
         self.c = container
         self.registry = registry
+        self.secrets = secrets
         self.gateway = ToolGateway(self)
         self._loops: dict[uuid.UUID, asyncio.Task[None]] = {}
         self._wake: dict[uuid.UUID, asyncio.Event] = {}
@@ -299,6 +312,8 @@ class Orchestrator:
                 )
                 version = s.get(AgentVersion, run.agent_version_id)
                 assert version is not None
+                settings = dict(version.runtime_preference_json.get("settings") or {})
+                handle, preflight = self._credential_for(s, run.runtime_id, settings, task)
                 req = RunRequest(
                     run_id=run.id,
                     agent={
@@ -311,13 +326,29 @@ class Orchestrator:
                     context=ctx,
                     attempt=attempt,
                     tools=self.gateway.port(run.id, None),
+                    settings=settings,
+                    tool_specs=self._tool_specs(s, agent),
+                    credential=handle,
                 )
-                return run.id, req, task.max_attempts, ctx
+                return run.id, req, task.max_attempts, ctx, preflight
 
             prepared = await self._tx(prepare)
             if isinstance(prepared, str):
                 return prepared  # type: ignore[return-value]
-            run_id, req, max_attempts, ctx = prepared
+            run_id, req, max_attempts, ctx, preflight = prepared
+            if preflight is not None:
+                code, msg = preflight
+                await self._tx(
+                    lambda s, r=run_id, c=code, m=msg: ex.finish_run(
+                        s,
+                        ex.get_run(s, r),
+                        ok=False,
+                        error_code=c,
+                        error_summary=m,
+                        source="orchestrator",
+                    )
+                )
+                return "failed"
             outcome, retry = await self._run_once(
                 run_id, req, ctx, depth, can_retry=attempt < max_attempts
             )
@@ -410,6 +441,12 @@ class Orchestrator:
                                 correlation_id=None,
                             )
                         )
+                    case normalize.Usage():
+                        await self._tx(
+                            lambda s, e=ev: metrics.record_usage(
+                                s, ex.get_run(s, run_id), e, load_prices()
+                            )
+                        )
                     case normalize.LessonProposed():
                         await self._tx(lambda s, e=ev: self._lesson(s, run_id, e))
                     case normalize.RoleChangeProposed():
@@ -479,7 +516,7 @@ class Orchestrator:
         except asyncio.CancelledError:
             raise
         except Exception as exc:  # runtime crashed: report, never fake success
-            log.exception("Runtime error in run %s", run_id)
+            log.error("Runtime error in run %s: %s", run_id, redact(repr(exc)))
             await self._tx(fail("RUNTIME_ERROR", f"Runtime raised {type(exc).__name__}"))
             return "failed", False
         finally:
@@ -489,6 +526,44 @@ class Orchestrator:
 
         await self._tx(fail("RUNTIME_PROTOCOL_ERROR", "Runtime ended without a terminal event"))
         return "failed", False
+
+    def _credential_for(
+        self, s: Session, runtime_id: str, settings: dict, task: Task
+    ) -> tuple[object | None, tuple[str, str] | None]:
+        """Resolve the agent's credential reference (ADR-0021). Never reads the secret here."""
+        rt = self.registry.get(runtime_id)
+        provider = getattr(rt, "provider", None)
+        if rt is None or not getattr(rt, "requires_credential", False) or provider is None:
+            return None, None
+        raw = settings.get("credential_id")
+        if not raw:
+            return None, ("CREDENTIAL_MISSING", f"Agent chưa được gán credential cho {provider}")
+        try:
+            c = creds.get(s, uuid.UUID(str(raw)))
+        except (ValueError, NotFoundError):
+            return None, ("CREDENTIAL_MISSING", "Credential của agent không còn tồn tại")
+        problem = creds.check_usable(c, provider, task.company_id)
+        if problem is not None:
+            return None, problem
+        if self.secrets is None:
+            return None, ("CREDENTIAL_MISSING", "Kho secret chưa được cấu hình")
+        return creds.handle(c, self.secrets), None
+
+    def _tool_specs(self, s: Session, agent: Agent) -> list[dict]:
+        """Tools this agent may actually use right now (granted, under ceiling, implemented)."""
+        specs = []
+        for t in caps.list_tools(s, agent.company_id):
+            if t.key not in EXECUTORS or not caps.decide(s, agent, t).allowed:
+                continue
+            specs.append(
+                {
+                    "key": t.key,
+                    "name": t.name,
+                    "description": t.description,
+                    "input_schema": t.input_schema_json or {},
+                }
+            )
+        return specs
 
     def _delegate(
         self, s: Session, run_id: uuid.UUID, ev: normalize.DelegationRequested, ctx: dict

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Response, status
 from pydantic import BaseModel
@@ -11,7 +12,7 @@ from orchestra_backend.agents.models import Agent
 from orchestra_backend.api.deps import ContainerDep
 from orchestra_backend.companies.schemas import CompanyOut
 from orchestra_backend.companies.service import get_active_company, get_company
-from orchestra_backend.core.errors import ErrorResponse
+from orchestra_backend.core.errors import ErrorResponse, NotFoundError
 from orchestra_backend.demo.seed import seed_demo_company
 from orchestra_backend.execution import service as ex
 from orchestra_backend.execution.models import Task
@@ -51,6 +52,9 @@ class RuntimeInfo(BaseModel):
     runtime_id: str
     display_name: str
     capabilities: dict[str, bool]
+    provider: str | None = None
+    requires_credential: bool = False
+    settings_schema: dict[str, Any] | None = None
 
 
 class ScenarioInfo(BaseModel):
@@ -71,9 +75,23 @@ def list_runtimes(c: ContainerDep) -> list[RuntimeInfo]:
             runtime_id=r.runtime_id,
             display_name=r.display_name,
             capabilities=r.capabilities.as_dict(),
+            provider=getattr(r, "provider", None),
+            requires_credential=bool(getattr(r, "requires_credential", False)),
+            settings_schema=(
+                r.settings_model.model_json_schema() if hasattr(r, "settings_model") else None
+            ),
         )
         for r in c.extras["registry"].all()
     ]
+
+
+@router.get("/runtimes/{runtime_id}/health", tags=["runtime"])
+async def runtime_health(c: ContainerDep, runtime_id: str) -> dict[str, Any]:
+    """Live health. For Ollama this includes models, loaded models and limits (ADR-0024)."""
+    rt = c.extras["registry"].get(runtime_id)
+    if rt is None:
+        raise NotFoundError("Runtime not found", details={"runtime_id": runtime_id})
+    return await rt.health_check()
 
 
 @router.get("/scenarios", response_model=list[ScenarioInfo], tags=["runtime"])

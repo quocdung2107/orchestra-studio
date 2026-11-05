@@ -10,6 +10,7 @@ from orchestra_backend.capabilities.models import (  # noqa: F401
     Tool,
 )
 from orchestra_backend.companies.models import Company  # noqa: F401
+from orchestra_backend.credentials.models import Credential  # noqa: F401
 from orchestra_backend.events.models import Event, EventStream  # noqa: F401
 from orchestra_backend.execution.models import (  # noqa: F401
     AgentRun,
@@ -22,4 +23,5 @@ from orchestra_backend.knowledge.models import (  # noqa: F401
     Lesson,
     RoleChangeProposal,
 )
+from orchestra_backend.metrics.models import Metric  # noqa: F401
 from orchestra_backend.organization.models import Department, OrgLayout  # noqa: F401

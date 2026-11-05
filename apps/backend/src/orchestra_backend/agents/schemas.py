@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 AgentStatus = Literal["draft", "active", "inactive", "archived"]
 
 _SECRET_HINTS = ("key", "secret", "token", "password", "credential")
+_REFERENCE_KEYS = {"credential_id", "max_tokens"}
 
 
 class AgentDefinition(BaseModel):
@@ -34,7 +35,12 @@ class RuntimePreference(BaseModel):
     @field_validator("settings")
     @classmethod
     def _no_secrets(cls, v: dict[str, Any]) -> dict[str, Any]:
-        bad = [k for k in v if any(h in k.lower() for h in _SECRET_HINTS)]
+        # `credential_id` is a reference to a stored secret (ADR-0021), not a secret.
+        bad = [
+            k
+            for k in v
+            if k not in _REFERENCE_KEYS and any(h in k.lower() for h in _SECRET_HINTS)
+        ]
         if bad:
             raise ValueError(
                 f"secret-like keys not allowed in runtime settings: {bad}; "

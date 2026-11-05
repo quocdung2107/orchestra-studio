@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     mock_step_delay_ms: int = 400
     # Base delay for automatic retries; doubles per attempt (ADR-0016).
     retry_backoff_ms: int = 1000
+    # Where secrets live (ADR-0021): "keyring" (OS store) or "memory" (tests/dev only).
+    secret_store: str = "keyring"  # noqa: S105 - store kind, not a secret
+    # Local model server (ADR-0024).
+    ollama_url: str = "http://127.0.0.1:11434"
+    ollama_max_concurrency: int = Field(default=1, ge=1, le=8)
+    # Network timeout (seconds) for one model call.
+    model_timeout_s: float = 300.0
 
     @cached_property
     def api_token(self) -> str:
