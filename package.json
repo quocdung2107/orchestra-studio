@@ -9,11 +9,5 @@
     "typecheck": "pnpm -r run typecheck",
     "build": "pnpm --filter @orchestra/desktop run build",
     "desktop": "pnpm --filter @orchestra/desktop run desktop"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "electron",
-      "esbuild"
-    ]
   }
 }

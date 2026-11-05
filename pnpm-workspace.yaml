@@ -1,3 +1,11 @@
 packages:
   - apps/desktop
   - packages/*
+
+# Supply-chain guard: only resolve versions published at least 1 day ago (minutes).
+minimumReleaseAge: 1440
+
+# Packages allowed to run install scripts (Electron downloads its binary).
+onlyBuiltDependencies:
+  - electron
+  - esbuild
