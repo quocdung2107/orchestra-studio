@@ -118,6 +118,18 @@ def test_auth_boundaries(wclient: TestClient) -> None:
     assert wclient.get(f"{W}/lease", params={"wait": 0}, headers=h).status_code == 204
 
 
+def test_polling_keeps_worker_online(wclient: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    from orchestra_backend.workers import service as wsvc
+
+    h = token(wclient, pair(wclient))
+    monkeypatch.setattr(wsvc, "SEEN_EVERY_S", 0.0)
+    before = wclient.get(f"{API}/workers").json()[0]["last_seen_at"]
+    time.sleep(0.05)
+    assert wclient.get(f"{W}/lease", params={"wait": 0}, headers=h).status_code == 204
+    after = wclient.get(f"{API}/workers").json()[0]
+    assert after["last_seen_at"] > before and after["online"] is True
+
+
 def test_access_token_expires(settings: Settings) -> None:
     s = settings.model_copy(update={"worker_token_ttl_s": 0.2})
     with TestClient(create_app(s), base_url=BASE_URL, headers={"X-Orchestra-Token": TOKEN}) as c:

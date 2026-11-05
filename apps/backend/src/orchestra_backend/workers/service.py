@@ -19,6 +19,7 @@ from orchestra_backend.core.errors import AppError, NotFoundError
 from orchestra_backend.core.time import utcnow
 from orchestra_backend.workers.models import Worker, WorkerPairing, WorkerToken
 
+SEEN_EVERY_S = 5.0  # throttle last_seen_at writes
 WORKER_RUNTIMES = ("mock", "ollama")  # runtimes that need no control-plane secret
 _CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"  # no 0/O, 1/I/L
 
@@ -110,7 +111,7 @@ def authenticate(s: Session, token: str) -> Worker:
     if worker.status != "active":
         raise WorkerRevokedError("Worker đã bị thu hồi")
     now = utcnow()
-    if worker.last_seen_at is None or (now - worker.last_seen_at).total_seconds() > 5:
+    if worker.last_seen_at is None or (now - worker.last_seen_at).total_seconds() > SEEN_EVERY_S:
         worker.last_seen_at = now
     return worker
 

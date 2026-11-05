@@ -1,7 +1,7 @@
 # P5 PLAN — Hybrid-ready Workers · Model Delegation · Backup
 
 **Version:** 0.1 · **Date:** 2026-11-05
-**Trạng thái:** Dung yêu cầu làm P5 (2026-11-05, "Cả 2 luôn"). Đề xuất mặc định: worker chạy **cùng máy** bằng giao thức sẵn sàng cho mạng; chạy trên máy khác (LAN/TLS) để sau. ADR 0025–0027 áp dụng theo đề xuất; R1–R9 xong trên `main` (2026-11-05), còn R10 kiểm tra trên Windows.
+**Trạng thái:** Dung yêu cầu làm P5 (2026-11-05, "Cả 2 luôn"). Đề xuất mặc định: worker chạy **cùng máy** bằng giao thức sẵn sàng cho mạng; chạy trên máy khác (LAN/TLS) để sau. ADR 0025–0027 áp dụng theo đề xuất; R1–R10 xong trên `main` (2026-11-05), đã kiểm tra trên Windows; chờ Dung nghiệm thu.
 **Phạm vi gốc:** `IMPLEMENTATION_PLAN.md` §2 (P5: remote workers, identity, auth, sandbox, backup/recovery) và §5, `RUNTIME.md` §9–10, `SECURITY.md` §7, §10, `ARCHITECTURE.md` §10.
 
 ## 0. Mục tiêu và tiêu chí nghiệm thu
@@ -33,7 +33,7 @@ Sandbox (SECURITY §7): P5 không thêm tool chạy lệnh. Worker chạy bằng
 | R7 | `team.delegate` cho agent model (xong, ADR-0026) | 2 |
 | R8 | Sao lưu/khôi phục + UI (xong, ADR-0027) | 2 |
 | R9 | UI Worker: ghép nối, trạng thái, heartbeat, thu hồi; chọn chạy trên worker cho agent (xong) | 3 |
-| R10 | Kiểm tra trên Windows, README | 1–2 |
+| R10 | Kiểm tra trên Windows, README (xong) | 1–2 |
 | | **Tổng** | **20–23** |
 
 ## 3. Ngoài phạm vi (cố ý)

@@ -79,6 +79,7 @@ def current_worker(c: ContainerDep, authorization: Annotated[str, Header()] = ""
         raise wsvc.WorkerAuthError("Thiếu token worker", code="WORKER_TOKEN_INVALID")
     with c.tx() as s:
         w = wsvc.authenticate(s, token.strip())
+        s.flush()  # persist last_seen_at before detaching the object
         s.expunge(w)
     return w
 
