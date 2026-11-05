@@ -37,9 +37,7 @@ class RuntimePreference(BaseModel):
     def _no_secrets(cls, v: dict[str, Any]) -> dict[str, Any]:
         # `credential_id` is a reference to a stored secret (ADR-0021), not a secret.
         bad = [
-            k
-            for k in v
-            if k not in _REFERENCE_KEYS and any(h in k.lower() for h in _SECRET_HINTS)
+            k for k in v if k not in _REFERENCE_KEYS and any(h in k.lower() for h in _SECRET_HINTS)
         ]
         if bad:
             raise ValueError(
