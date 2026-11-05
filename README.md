@@ -131,6 +131,11 @@ pnpm test        # gồm kiểm tra openapi.json còn khớp với backend
 
 Lưu ý chi phí: gọi Claude/OpenAI tính tiền theo token. Mock vẫn là mặc định; mỗi run có giới hạn số lượt gọi model (`max_turns`, mặc định 8) và `max_tokens`.
 
+## Sao lưu & khôi phục (P5)
+
+- Trong app: mục **Sao lưu** → "Tạo bản sao lưu" (hoặc `pnpm backup`). File zip nằm trong `data/backups/`, gồm cơ sở dữ liệu, artifact, workspace; không chứa API key.
+- Khôi phục: **đóng app**, rồi chạy `pnpm restore orchestra-backup-….zip`. Lệnh kiểm tra checksum, hỏi lại, và giữ dữ liệu cũ trong `data/pre-restore-…/`. Chi tiết: ADR-0027.
+
 ## Giới hạn hiện tại (có chủ đích)
 
 - Agent chạy model thật giao việc qua tool `team.delegate` (chỉ cho cấp dưới trực tiếp, tối đa 5 lần mỗi run); các task con chạy lần lượt, không song song.

@@ -24,14 +24,14 @@ Sandbox (SECURITY §7): P5 không thêm tool chạy lệnh. Worker chạy bằng
 
 | ID | Task | Buổi |
 |---|---|---|
-| R1 | Tùy chọn `think` cho Ollama (xong 0325344) | 1 |
+| R1 | Tùy chọn `think` cho Ollama (xong 0325344; mặc định đổi thành "model tự quyết" và lọc suy luận lẫn vào câu trả lời sau khi đo trên máy Dung) | 1 |
 | R2 | Migration 0006: workers, enrollment, leases | 1 |
 | R3 | API worker: ghép nối, token, long-poll lease, heartbeat, event, artifact, tool proxy, thu hồi | 4–5 |
 | R4 | `RemoteWorkerRuntime` trong control plane + quét lease hết hạn | 2 |
 | R5 | Tiến trình `orchestra-worker` (chạy mock/ollama), `pnpm worker` | 2–3 |
 | R6 | Test: mất kết nối, replay, token hết hạn, thu hồi giữa chừng, checksum sai | 2 |
 | R7 | `team.delegate` cho agent model (xong, ADR-0026) | 2 |
-| R8 | Sao lưu/khôi phục + UI | 2 |
+| R8 | Sao lưu/khôi phục + UI (xong, ADR-0027) | 2 |
 | R9 | UI Worker: ghép nối, trạng thái, heartbeat, thu hồi; chọn chạy trên worker cho agent | 3 |
 | R10 | Kiểm tra trên Windows, README | 1–2 |
 | | **Tổng** | **20–23** |

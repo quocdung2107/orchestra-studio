@@ -11,6 +11,7 @@ import { ApprovalsView } from "./views/ApprovalsView";
 import { KnowledgeView } from "./views/KnowledgeView";
 import { ConnectionsView } from "./views/ConnectionsView";
 import { KpiView } from "./views/KpiView";
+import { BackupView } from "./views/BackupView";
 import { CapabilitiesView } from "./views/CapabilitiesView";
 import { OrgView } from "./views/OrgView";
 import { CompanyOverview } from "./views/CompanyOverview";
@@ -78,6 +79,8 @@ function Shell() {
           <KpiView companyId={companyId} />
         ) : view === "connections" ? (
           <ConnectionsView companyId={companyId} />
+        ) : view === "backups" ? (
+          <BackupView />
         ) : (
           <Placeholder view={view} />
         )}

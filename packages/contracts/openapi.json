@@ -1019,6 +1019,80 @@
         "title": "AttachSkill",
         "type": "object"
       },
+      "BackupList": {
+        "properties": {
+          "directory": {
+            "title": "Directory",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BackupOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "restore_command": {
+            "title": "Restore Command",
+            "type": "string"
+          }
+        },
+        "required": [
+          "directory",
+          "items",
+          "restore_command"
+        ],
+        "title": "BackupList",
+        "type": "object"
+      },
+      "BackupOut": {
+        "properties": {
+          "app_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Version"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "size_bytes",
+          "created_at",
+          "files",
+          "app_version"
+        ],
+        "title": "BackupOut",
+        "type": "object"
+      },
       "CompanyCreate": {
         "additionalProperties": false,
         "properties": {
@@ -5262,6 +5336,67 @@
         "summary": "Artifact To Knowledge",
         "tags": [
           "knowledge"
+        ]
+      }
+    },
+    "/api/v1/backups": {
+      "get": {
+        "operationId": "list_backups_api_v1_backups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "List Backups",
+        "tags": [
+          "backups"
+        ]
+      },
+      "post": {
+        "description": "Snapshot the database, artifacts and workspaces into one zip (no secrets).",
+        "operationId": "create_backup_api_v1_backups_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "Create Backup",
+        "tags": [
+          "backups"
         ]
       }
     },

@@ -12,6 +12,7 @@ const NAV: { view: View; label: string; phase?: string }[] = [
   { view: "knowledge", label: "Tri thức" },
   { view: "analytics", label: "Hiệu suất (KPI)" },
   { view: "connections", label: "Kết nối & model" },
+  { view: "backups", label: "Sao lưu" },
 ];
 
 export function Sidebar({ companies }: { companies: Company[] }) {

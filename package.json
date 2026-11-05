@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "backend": "uv run --project apps/backend orchestra-backend",
+    "backup": "uv run --project apps/backend orchestra-backend backup",
+    "restore": "uv run --project apps/backend orchestra-backend restore",
     "contracts": "pnpm --filter @orchestra/contracts run generate",
     "dev": "pnpm --filter @orchestra/desktop run dev",
     "test": "pnpm -r run test",

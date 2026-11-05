@@ -11,6 +11,7 @@ from orchestra_backend import __version__
 from orchestra_backend.api import (
     agents,
     approvals,
+    backups,
     capabilities,
     companies,
     credentials,
@@ -98,6 +99,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     api.include_router(capabilities.router)
     api.include_router(credentials.router)
     api.include_router(metrics.router)
+    api.include_router(backups.router)
     api.include_router(templates.router)
     api.include_router(approvals.router)
     api.include_router(knowledge.router)
