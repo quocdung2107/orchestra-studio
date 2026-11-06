@@ -2,7 +2,7 @@
 
 A backup is one zip in `data/backups/`:
   orchestra.db            consistent copy via SQLite's online backup API
-  artifacts/**, workspaces/**
+  artifacts/**, workspaces/**, media/** (ADR-0028)
   manifest.json           format, time, versions, SHA-256 of every file
 Secrets are never included: they live in the OS store (ADR-0021); the token file is skipped.
 Restore runs only while the app is stopped (CLI), keeps the current data in
@@ -30,7 +30,7 @@ from orchestra_backend.core.errors import AppError, ConflictError, NotFoundError
 FORMAT = 1
 DB_NAME = "orchestra.db"
 MANIFEST = "manifest.json"
-TREES = ("artifacts", "workspaces")
+TREES = ("artifacts", "workspaces", "media")
 _lock = threading.Lock()
 
 

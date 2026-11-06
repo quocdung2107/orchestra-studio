@@ -19,6 +19,8 @@ import { CompanyOverview } from "./views/CompanyOverview";
 import { NoCompany } from "./views/NoCompany";
 import { Placeholder } from "./views/Placeholder";
 import { RunsView } from "./views/RunsView";
+import { MediaSettingsView } from "./views/MediaSettingsView";
+import { ProductionView } from "./views/ProductionView";
 
 export function App() {
   return (
@@ -64,6 +66,10 @@ function Shell() {
           <NoCompany />
         ) : view === "overview" ? (
           <CompanyOverview companyId={companyId} />
+        ) : view === "production" ? (
+          <ProductionView companyId={companyId} />
+        ) : view === "media_settings" ? (
+          <MediaSettingsView companyId={companyId} />
         ) : view === "agents" ? (
           <AgentsView companyId={companyId} />
         ) : view === "runs" ? (

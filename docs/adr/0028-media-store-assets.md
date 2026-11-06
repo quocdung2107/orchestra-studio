@@ -10,7 +10,7 @@ Artifact hiện tại là text ≤ 1 MB (ADR-0004). Sản xuất video cần ả
 - File nằm ở `data/media/<ab>/<cd>/<sha256>` (content-addressed). Ghi ra `.part` trong cùng ổ rồi đổi tên, nên không có file dở. Cùng nội dung chỉ lưu một lần.
 - Bảng `assets`: `company_id`, `kind` (`image|voice|music|subtitle|render|reference_audio|other`), `sha256`, `mime`, `bytes`, `duration_s`, `width`, `height`, `provider`, `model`, `params_json`, `license_json`, `parent_asset_id`, `source` (`upload|provider|render`), `retention` (`temp|keep`), `label`.
 - Upload: `PUT /companies/{id}/assets?kind=&filename=` với body thô (stream, giới hạn kích thước theo kind). Không thêm `python-multipart`.
-- Đọc: `GET /assets/{id}/content` có `Range` (206) để xem video. UI tải bằng `fetch` có token rồi tạo blob URL; token **không** nằm trong URL.
+- Đọc: `GET /assets/{id}/content` có `Range` (206) để xem video. UI dùng URL cùng origin trực tiếp trong `<img>`/`<video>`; proxy của shell Electron/Vite gắn token, nên token **không** nằm trong URL.
 - Kiểm tra định dạng bằng magic bytes (PNG/JPEG/WebP/WAV/MP3/MP4), không tin đuôi file hay `Content-Type` của client.
 - Backup (ADR-0027) thêm cây `media/`.
 

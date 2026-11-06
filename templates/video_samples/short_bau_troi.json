@@ -1,0 +1,35 @@
+{
+  "title": "Vì sao bầu trời có màu xanh?",
+  "profile": "short",
+  "notes": "Kịch bản mẫu để thử pipeline (Reels 9:16, khoảng 45–60 giây). Viết tay, chưa qua Claude.",
+  "scenes": [
+    {
+      "narration": "Bạn có bao giờ tự hỏi vì sao bầu trời ban ngày lại có màu xanh không? Câu trả lời nằm ở chính ánh sáng Mặt Trời.",
+      "visual_prompt": "Bầu trời xanh trong veo, vài đám mây trắng, góc nhìn từ dưới lên, ảnh chụp tự nhiên, dọc 9:16"
+    },
+    {
+      "narration": "Ánh sáng trắng của Mặt Trời thật ra là hỗn hợp của nhiều màu, từ đỏ, cam, vàng cho tới lục, lam và tím.",
+      "visual_prompt": "Lăng kính tách ánh sáng trắng thành dải cầu vồng trên nền tối, minh họa khoa học"
+    },
+    {
+      "narration": "Khi đi qua bầu khí quyển dày khoảng 100 km, ánh sáng va vào các phân tử khí rất nhỏ như nitơ và ôxy.",
+      "visual_prompt": "Minh họa Trái Đất nhìn từ không gian với lớp khí quyển mỏng phát sáng xanh"
+    },
+    {
+      "narration": "Ánh sáng có bước sóng ngắn, như màu lam, bị tán xạ mạnh hơn ánh sáng đỏ tới khoảng 5 lần. Hiện tượng này gọi là tán xạ Rayleigh.",
+      "visual_prompt": "Sơ đồ đơn giản các tia sáng xanh bị phân tán khắp nơi, tia đỏ đi thẳng, phong cách infographic"
+    },
+    {
+      "narration": "Vì vậy, dù nhìn về hướng nào, mắt ta cũng nhận được nhiều ánh sáng xanh bị tán xạ từ khắp bầu trời.",
+      "visual_prompt": "Một người đứng trên đồi cỏ ngước nhìn bầu trời xanh rộng lớn"
+    },
+    {
+      "narration": "Còn lúc hoàng hôn, ánh sáng phải đi một quãng đường dài hơn, màu xanh bị tán xạ gần hết, nên bầu trời chuyển sang cam và đỏ.",
+      "visual_prompt": "Hoàng hôn rực đỏ cam trên biển, mặt trời sát đường chân trời"
+    },
+    {
+      "narration": "Nếu thấy hay, hãy theo dõi kênh để khám phá thêm những điều thú vị quanh ta mỗi ngày nhé!",
+      "visual_prompt": "Bầu trời đêm đầy sao chuyển dần sang bình minh, không gian rộng mở"
+    }
+  ]
+}

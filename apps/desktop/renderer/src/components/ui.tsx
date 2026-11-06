@@ -41,6 +41,10 @@ const STATUS_STYLE: Record<string, string> = {
   approved: "bg-emerald-900 text-emerald-200",
   rejected: "bg-red-900 text-red-200",
   expired: "bg-slate-800 text-slate-400",
+  producing: "bg-sky-900 text-sky-200",
+  ready: "bg-emerald-900 text-emerald-200",
+  succeeded: "bg-emerald-900 text-emerald-200",
+  qa_failed: "bg-amber-900 text-amber-200",
 };
 
 const STATUS_TEXT: Record<string, string> = {
@@ -52,6 +56,10 @@ const STATUS_TEXT: Record<string, string> = {
   approved: "đã duyệt",
   rejected: "từ chối",
   expired: "hết hạn",
+  producing: "đang sản xuất",
+  ready: "sẵn sàng",
+  qa_failed: "QA chưa đạt",
+  succeeded: "xong",
 };
 
 export function StatusBadge({ status }: { status: string }) {

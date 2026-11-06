@@ -4,6 +4,8 @@ import { useSelection, type View } from "../state/selection";
 
 const NAV: { view: View; label: string; phase?: string }[] = [
   { view: "overview", label: "Tổng quan" },
+  { view: "production", label: "Sản xuất video" },
+  { view: "media_settings", label: "Cài đặt sản xuất" },
   { view: "agents", label: "Agents" },
   { view: "runs", label: "Tasks & Runs" },
   { view: "organization", label: "Sơ đồ tổ chức" },

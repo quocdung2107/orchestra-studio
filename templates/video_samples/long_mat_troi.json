@@ -1,0 +1,22 @@
+{
+  "title": "Mặt Trời: ngôi sao nuôi sống Trái Đất",
+  "profile": "long",
+  "notes": "Kịch bản mẫu cho video dài 16:9 (khoảng 3–4 phút). Viết tay để thử pipeline; số liệu phổ thông, nên kiểm tra lại trước khi đăng.",
+  "scenes": [
+    {"narration": "Mỗi buổi sáng, Mặt Trời mọc lên và mang theo ánh sáng, hơi ấm cho cả hành tinh. Nhưng bạn có biết ngôi sao quen thuộc này thật sự lớn đến mức nào, và nó hoạt động ra sao không? Hôm nay chúng ta sẽ cùng tìm hiểu.", "visual_prompt": "Bình minh trên cánh đồng lúa Việt Nam, mặt trời nhô lên, khung cảnh rộng 16:9"},
+    {"narration": "Mặt Trời là một ngôi sao, giống như hàng tỷ ngôi sao khác trong dải Ngân Hà. Nó chỉ trông to và sáng hơn vì ở gần chúng ta hơn rất nhiều.", "visual_prompt": "Dải Ngân Hà trên bầu trời đêm, một ngôi sao sáng nổi bật"},
+    {"narration": "Khoảng cách trung bình từ Trái Đất đến Mặt Trời là khoảng 150 triệu km. Ánh sáng đi với vận tốc gần 300.000 km mỗi giây, vậy mà vẫn cần khoảng 8 phút 20 giây để tới được chỗ chúng ta.", "visual_prompt": "Minh họa tia sáng đi từ Mặt Trời tới Trái Đất trong không gian tối"},
+    {"narration": "Đường kính của Mặt Trời vào khoảng 1,39 triệu km, gấp khoảng 109 lần đường kính Trái Đất. Nếu Mặt Trời là một quả cầu rỗng, nó có thể chứa hơn một triệu Trái Đất bên trong.", "visual_prompt": "So sánh kích thước Mặt Trời khổng lồ và Trái Đất nhỏ bé bên cạnh"},
+    {"narration": "Mặt Trời chiếm khoảng 99,8% tổng khối lượng của cả Hệ Mặt Trời. Tất cả các hành tinh, mặt trăng và tiểu hành tinh cộng lại chỉ là phần rất nhỏ còn lại.", "visual_prompt": "Hệ Mặt Trời với các hành tinh quay quanh, Mặt Trời ở trung tâm"},
+    {"narration": "Vậy năng lượng của Mặt Trời đến từ đâu? Ở lõi, nhiệt độ lên tới khoảng 15 triệu độ C. Tại đó, các hạt nhân hydro liên tục hợp nhất thành heli, giải phóng một lượng năng lượng khổng lồ. Quá trình này gọi là phản ứng tổng hợp hạt nhân.", "visual_prompt": "Mặt cắt minh họa cấu trúc bên trong Mặt Trời với lõi phát sáng"},
+    {"narration": "Năng lượng sinh ra ở lõi phải mất rất nhiều năm mới thoát ra được tới bề mặt, vì nó bị hấp thụ và phát xạ lại vô số lần trên đường đi.", "visual_prompt": "Các lớp của Mặt Trời: lõi, vùng bức xạ, vùng đối lưu, minh họa khoa học"},
+    {"narration": "Bề mặt mà ta nhìn thấy, gọi là quang quyển, có nhiệt độ khoảng 5.500 độ C. Trên đó thường xuất hiện các vết đen, là những vùng mát hơn xung quanh và có từ trường rất mạnh.", "visual_prompt": "Cận cảnh bề mặt Mặt Trời với các vết đen và hạt sáng"},
+    {"narration": "Bên ngoài là vành nhật hoa, một lớp khí cực nóng trải dài vào không gian. Chúng ta chỉ dễ dàng nhìn thấy nó bằng mắt thường trong lúc nhật thực toàn phần.", "visual_prompt": "Nhật thực toàn phần với vành nhật hoa trắng tỏa ra quanh mặt trăng đen"},
+    {"narration": "Mặt Trời cũng liên tục thổi ra một dòng hạt mang điện gọi là gió Mặt Trời. Khi dòng hạt này gặp từ trường của Trái Đất, nó có thể tạo ra cực quang lung linh ở gần hai cực.", "visual_prompt": "Cực quang xanh lục uốn lượn trên bầu trời đêm vùng cực"},
+    {"narration": "Với sự sống trên Trái Đất, Mặt Trời là nguồn năng lượng gần như duy nhất. Cây xanh dùng ánh sáng để quang hợp, tạo ra thức ăn và ôxy cho muôn loài.", "visual_prompt": "Ánh nắng xuyên qua tán lá rừng nhiệt đới xanh mướt"},
+    {"narration": "Ánh nắng còn điều khiển khí hậu, tạo ra gió, mây và mưa. Ngày nay, con người cũng dùng các tấm pin để biến ánh nắng thành điện năng sạch.", "visual_prompt": "Cánh đồng pin năng lượng mặt trời dưới bầu trời xanh"},
+    {"narration": "Mặt Trời đã khoảng 4,6 tỷ năm tuổi và đang ở giai đoạn ổn định. Các nhà khoa học ước tính nó còn có thể cháy sáng như hiện nay thêm khoảng 5 tỷ năm nữa.", "visual_prompt": "Dòng thời gian minh họa vòng đời của một ngôi sao như Mặt Trời"},
+    {"narration": "Một lưu ý quan trọng: tuyệt đối không nhìn thẳng vào Mặt Trời bằng mắt thường hay qua ống nhòm, vì có thể gây tổn thương mắt vĩnh viễn. Hãy dùng kính lọc chuyên dụng khi quan sát.", "visual_prompt": "Một người đeo kính lọc chuyên dụng quan sát nhật thực an toàn"},
+    {"narration": "Lần tới khi đón nắng sớm, hãy nhớ rằng thứ ánh sáng ấy đã đi qua 150 triệu km để tới với bạn. Nếu thấy video hữu ích, hãy theo dõi kênh để cùng khám phá thêm nhiều bí ẩn của vũ trụ nhé!", "visual_prompt": "Hoàng hôn trên biển với bóng thuyền nhỏ, không khí yên bình"}
+  ]
+}

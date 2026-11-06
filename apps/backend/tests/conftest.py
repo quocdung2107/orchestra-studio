@@ -22,6 +22,8 @@ def settings(tmp_path: Path) -> Settings:
         mock_step_delay_ms=0,
         retry_backoff_ms=0,
         secret_store="memory",
+        media_runner_enabled=False,
+        engine_start_timeout_s=5,
     )
 
 

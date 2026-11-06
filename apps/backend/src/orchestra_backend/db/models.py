@@ -18,13 +18,22 @@ from orchestra_backend.execution.models import (  # noqa: F401
     Task,
     TaskDependency,
 )
+from orchestra_backend.jobs.models import Job  # noqa: F401
 from orchestra_backend.knowledge.models import (  # noqa: F401
     KnowledgeItem,
     Lesson,
     RoleChangeProposal,
 )
+from orchestra_backend.media.models import Asset  # noqa: F401
 from orchestra_backend.metrics.models import Metric  # noqa: F401
 from orchestra_backend.organization.models import Department, OrgLayout  # noqa: F401
+from orchestra_backend.production.models import (  # noqa: F401
+    VideoProject,
+    VideoRender,
+    VideoScene,
+    VoiceSegment,
+)
+from orchestra_backend.voice.models import VoiceProfile, VoiceProfileVersion  # noqa: F401
 from orchestra_backend.workers.models import (  # noqa: F401
     Worker,
     WorkerLease,

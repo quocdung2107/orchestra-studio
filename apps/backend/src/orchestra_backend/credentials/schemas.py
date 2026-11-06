@@ -6,7 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
-Provider = Literal["anthropic", "openai"]
+# "image_api": key for a cloud image API Dung configures (ADR-0030).
+Provider = Literal["anthropic", "openai", "image_api"]
 
 
 class CredentialOut(BaseModel):

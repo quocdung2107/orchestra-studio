@@ -1,0 +1,4 @@
+case,encoder,run,cold,video_s,render_s,speed_x,min_free_ram_mb,max_vram_used_mb,file_mb,qa_passed,qa_failed,ffmpeg,error
+R1,libx264,1,True,30.0,14.46,2.07,14910,,1.3,True,,ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers,
+R2,libx264,1,True,90.0,42.49,2.12,14660,,3.6,True,,ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers,
+R3,libx264,1,True,300.0,141.42,2.12,12690,,11.5,True,,ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers,

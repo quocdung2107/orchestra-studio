@@ -48,6 +48,18 @@ class Settings(BaseSettings):
     worker_pairing_ttl_s: float = Field(default=900.0, gt=0)
     worker_dispatch_timeout_s: float = Field(default=300.0, gt=0)
     worker_poll_max_s: float = Field(default=25.0, ge=0)
+    # Media production (ADR-0028..0033).
+    ffmpeg: str = "ffmpeg"  # executable name in PATH or full path
+    ffprobe: str = "ffprobe"
+    media_max_parallel: int = Field(default=1, ge=1, le=8)
+    media_cpu_slots: int = Field(default=1, ge=1, le=16)
+    media_poll_s: float = Field(default=1.0, gt=0)
+    job_lease_s: float = Field(default=120.0, gt=0)
+    engine_keep_warm_s: float = Field(default=0.0, ge=0)
+    engine_start_timeout_s: float = Field(default=180.0, gt=0)
+    render_timeout_s: float = Field(default=3600.0, gt=0)
+    # Disable the background media runner (tests drive it explicitly).
+    media_runner_enabled: bool = True
 
     @cached_property
     def api_token(self) -> str:
@@ -66,6 +78,14 @@ class Settings(BaseSettings):
     @property
     def artifacts_dir(self) -> Path:
         return self.data_dir / "artifacts"
+
+    @property
+    def media_dir(self) -> Path:
+        return self.data_dir / "media"
+
+    @property
+    def render_work_dir(self) -> Path:
+        return self.data_dir / "render-work"
 
     @property
     def workspaces_dir(self) -> Path:

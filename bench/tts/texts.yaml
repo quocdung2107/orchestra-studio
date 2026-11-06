@@ -1,0 +1,52 @@
+# LOCAL_AI_BENCHMARK_PLAN §3.1. Fixed texts; do not edit between runs (compare like with like).
+# `expected` = correct reading after Orchestra's normalization (pronunciation check T3-T6).
+T1:
+  type: Câu ngắn
+  text: "Bạn có biết vì sao bầu trời có màu xanh không?"
+T2:
+  type: Đoạn dài
+  text: >-
+    Năm ấy, khi con tàu thăm dò rời khỏi quỹ đạo Trái Đất, không ai trong phòng điều khiển dám chắc
+    rằng nó sẽ đi xa đến thế. Các kỹ sư đã tính toán từng gam nhiên liệu, từng góc nghiêng của tấm pin,
+    nhưng vũ trụ vẫn luôn có những bất ngờ mà không phương trình nào lường trước được. Suốt nhiều tháng,
+    tín hiệu gửi về yếu dần, có lúc tưởng như đã mất hẳn, rồi bất chợt lại vang lên, rõ ràng và đều đặn,
+    như một lời nhắc rằng con người, dù nhỏ bé, vẫn có thể chạm tới những nơi xa xôi nhất. Hôm nay, khi
+    nhìn lại hành trình ấy, chúng ta không chỉ thấy những con số khô khan về khoảng cách hay tốc độ, mà
+    còn thấy sự kiên nhẫn, lòng tò mò và tinh thần làm việc nhóm của hàng nghìn người, những người đã
+    dành cả tuổi trẻ để theo đuổi một câu hỏi tưởng chừng rất đơn giản: ngoài kia có gì?
+T3:
+  type: Tên riêng
+  text: "Nguyễn Thị Minh Khai, Đắk Lắk, Phan Rang–Tháp Chàm, Albert Einstein, Marie Curie"
+  expected: "Nguyễn Thị Minh Khai, Đắk Lắk, Phan Rang Tháp Chàm, Albert Einstein, Marie Curie"
+T4:
+  type: Ngày tháng, giờ
+  text: "Ngày 02/09/1945, lúc 14h30; quý III/2026; thế kỷ XXI"
+  expected: "Ngày hai tháng chín năm một ngàn chín trăm bốn mươi lăm, lúc mười bốn giờ ba mươi phút; quý ba năm hai ngàn không trăm hai mươi sáu; thế kỷ hai mươi mốt"
+T5:
+  type: Số liệu
+  text: "1.250.000 đồng; 3,14; 25%; 1/3; 150 km/h; 2.000 m²; −5°C"
+  expected: "một triệu hai trăm năm mươi ngàn đồng; ba phẩy mười bốn; hai mươi lăm phần trăm; một phần ba; một trăm năm mươi ki lô mét trên giờ; hai ngàn mét vuông; âm năm độ C"
+T6:
+  type: Thuật ngữ tiếng Anh
+  text: "Mô hình AI dùng GPU NVIDIA và framework PyTorch để chạy deep learning trên laptop"
+T7:
+  type: Câu hỏi
+  text: "Nếu Mặt Trời biến mất, sau bao lâu Trái Đất mới tối?"
+T8:
+  type: Câu cảm thán
+  text: "Thật không thể tin nổi! Nó lớn gấp một triệu lần Trái Đất!"
+T9:
+  type: Giọng kể chuyện
+  text: >-
+    Đêm hôm đó, ngôi làng chìm trong im lặng. Chỉ có tiếng gió lùa qua rặng tre... và một ánh đèn
+    le lói ở cuối con đường đất. Không ai biết ai đã thắp nó. Cũng không ai dám lại gần.
+T10:
+  type: Giọng tin tức
+  text: >-
+    Kính chào quý vị. Theo cơ quan khí tượng, trong ba ngày tới, các tỉnh Nam Bộ tiếp tục có mưa rào và
+    dông vào chiều tối, lượng mưa phổ biến từ 20 đến 40 mi li mét. Nhiệt độ cao nhất dao động từ 31 đến
+    33 độ C. Người dân được khuyến cáo theo dõi bản tin thời tiết thường xuyên, chủ động phòng tránh
+    sét đánh và ngập úng cục bộ. Tại Thành phố Hồ Chí Minh, triều cường dự kiến đạt đỉnh vào sáng ngày
+    mai, có thể gây ngập tại một số tuyến đường ven sông. Chúng tôi sẽ tiếp tục cập nhật thông tin
+    trong các bản tin tiếp theo.
+# T11 (consistency): 40 segments built from templates/video_samples/long_mat_troi.json at run time.

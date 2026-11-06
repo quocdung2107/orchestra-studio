@@ -293,7 +293,39 @@ class CredentialChanged(Payload):
     ok: bool | None = None
 
 
+class AssetCreated(Payload):
+    asset_id: uuid.UUID
+    kind: str
+    source: str
+    bytes: int
+
+
+class JobStatusChanged(Payload):
+    job_id: uuid.UUID
+    kind: str
+    status: str
+    subject_id: uuid.UUID | None = None
+    error_code: str | None = None
+
+
+class VideoProjectCreated(Payload):
+    project_id: uuid.UUID
+    title: str
+    profile: str
+
+
+class VideoRenderFinished(Payload):
+    project_id: uuid.UUID
+    render_id: uuid.UUID
+    status: str
+    qa_passed: bool | None = None
+
+
 CATALOG: dict[str, type[Payload]] = {
+    "asset.created": AssetCreated,
+    "job.status_changed": JobStatusChanged,
+    "video.project_created": VideoProjectCreated,
+    "video.render_finished": VideoRenderFinished,
     "company.created": CompanyCreated,
     "agent.run.usage_recorded": RunUsageRecorded,
     "credential.created": CredentialChanged,
