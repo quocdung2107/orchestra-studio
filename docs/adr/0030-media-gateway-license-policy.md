@@ -1,6 +1,6 @@
 # ADR-0030 — Media gateway là module trong backend; provider khai báo license, chặn non-commercial
 
-**Status:** Proposed · **Date:** 2026-11-06
+**Status:** Accepted (Dung, 2026-11-06) · **Date:** 2026-11-06
 **Liên quan:** plan local AI §13 (L1, L7), audit video §5.7 (B7)
 
 ## Decision

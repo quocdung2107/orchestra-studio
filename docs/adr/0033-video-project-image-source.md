@@ -1,6 +1,6 @@
 # ADR-0033 — Video project từ kịch bản, nguồn ảnh chọn khi bắt đầu (nhập tay / cloud)
 
-**Status:** Proposed · **Date:** 2026-11-06
+**Status:** Accepted (Dung, 2026-11-06) · **Date:** 2026-11-06
 **Liên quan:** plan local AI §20 (L12); câu trả lời của Dung ngày 2026-11-06
 
 ## Decision

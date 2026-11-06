@@ -2,7 +2,11 @@
 
 Branch: `claude/project-thread-lpp66w`. Lượt chạy dừng ở L12 để Dung đánh giá một lần.
 
-## 1. Cần Dung chốt (theo thứ tự ưu tiên)
+## 1. Quyết định
+
+**2026-11-06: Dung chốt cả D1–D6 theo cột khuyến nghị.** ADR 0028–0033 chuyển sang Accepted; watermark giữ khi thử; giọng chờ nghe thử; API ảnh Dung tìm; RAM kiểm tra trước khi mua; bench chạy trên máy Dung.
+
+Bảng gốc:
 
 | # | Quyết định | Khuyến nghị | Ảnh hưởng nếu chưa chốt |
 |---|---|---|---|

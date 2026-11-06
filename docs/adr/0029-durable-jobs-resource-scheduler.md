@@ -1,6 +1,6 @@
 # ADR-0029 — Job runner bền vững trong SQLite + resource scheduler cho một PC
 
-**Status:** Proposed · **Date:** 2026-11-06
+**Status:** Accepted (Dung, 2026-11-06) · **Date:** 2026-11-06
 **Liên quan:** audit video §5.6 (B2), plan local AI §14 (L6)
 
 ## Context

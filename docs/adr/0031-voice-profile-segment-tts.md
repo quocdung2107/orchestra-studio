@@ -1,6 +1,6 @@
 # ADR-0031 — Voice profile có version, chuẩn hóa tiếng Việt riêng, TTS theo đoạn
 
-**Status:** Proposed · **Date:** 2026-11-06
+**Status:** Accepted (Dung, 2026-11-06) · **Date:** 2026-11-06
 **Liên quan:** plan local AI §5.3–5.4 (L8, L9); Dung chọn giọng nữ miền Nam, có thể đổi
 
 ## Decision

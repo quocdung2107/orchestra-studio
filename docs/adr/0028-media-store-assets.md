@@ -1,6 +1,6 @@
 # ADR-0028 — Media store nhị phân theo nội dung (sha256) và bảng Asset
 
-**Status:** Proposed (chờ Dung duyệt cùng đợt L1–L12) · **Date:** 2026-11-06
+**Status:** Accepted (Dung, 2026-11-06) · **Date:** 2026-11-06
 **Liên quan:** audit video §5.8, §6.4 (B1), plan local AI §20 (L5)
 
 ## Context

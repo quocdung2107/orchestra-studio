@@ -1,6 +1,6 @@
 # ADR-0032 — Timeline JSON v1, render bằng FFmpeg CLI, QA tất định
 
-**Status:** Proposed · **Date:** 2026-11-06
+**Status:** Accepted (Dung, 2026-11-06) · **Date:** 2026-11-06
 **Liên quan:** plan local AI §10 (L10, L11), audit video §6.5–6.6 (B8)
 
 ## Decision
