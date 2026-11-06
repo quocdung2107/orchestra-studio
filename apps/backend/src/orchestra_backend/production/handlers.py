@@ -318,7 +318,9 @@ class RenderHandler:
             r = s.get(VideoRender, uuid.UUID(job.payload_json["render_id"]))
             gpu = bool(r and r.encoder == "h264_nvenc")
         return ResourceReq(
-            device="gpu" if gpu else "cpu", est_ram_mb=1200, min_vram_mb=300 if gpu else 0
+            device="gpu" if gpu else "cpu",
+            est_ram_mb=c.settings.render_est_ram_mb,
+            min_vram_mb=300 if gpu else 0,
         )
 
     def run(self, ctx: JobContext) -> dict[str, Any]:

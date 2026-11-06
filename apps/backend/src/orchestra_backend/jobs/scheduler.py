@@ -10,7 +10,7 @@ from typing import Literal
 from orchestra_backend.jobs import sysinfo
 from orchestra_backend.jobs.engines import EngineManager
 
-RAM_RESERVE_MB = 512  # keep for the OS, the backend and the UI
+RAM_RESERVE_MB = 256  # default kept for the OS, the backend and the UI
 
 
 @dataclass(frozen=True)
@@ -42,7 +42,11 @@ class ResourceScheduler:
         engines: EngineManager | None = None,
         ram_probe: Callable[[], int | None] = sysinfo.available_ram_mb,
         vram_probe: Callable[[], int | None] | None = None,
+        ram_reserve_mb: int = RAM_RESERVE_MB,
+        memory_gate: bool = True,
     ):
+        self.ram_reserve_mb = ram_reserve_mb
+        self.memory_gate = memory_gate
         self.max_parallel = max_parallel
         self.cpu_total = cpu_slots
         self.engines = engines
@@ -56,11 +60,13 @@ class ResourceScheduler:
 
     def _memory_ok(self, req: ResourceReq) -> bool:
         warm = bool(req.engine and self.engines and self.engines.is_warm(req.engine))
+        if not self.memory_gate:
+            return True
         if req.est_ram_mb and not warm:
             free = self.ram_probe()
-            if free is not None and free - RAM_RESERVE_MB < req.est_ram_mb:
+            if free is not None and free - self.ram_reserve_mb < req.est_ram_mb:
                 self.last_reason = (
-                    f"RAM trống {free} MB < cần {req.est_ram_mb} + {RAM_RESERVE_MB} MB"
+                    f"RAM trống {free} MB < cần {req.est_ram_mb} + {self.ram_reserve_mb} MB"
                 )
                 return False
         if req.min_vram_mb and not warm:

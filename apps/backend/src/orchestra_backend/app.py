@@ -107,6 +107,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         max_parallel=settings.media_max_parallel,
         cpu_slots=settings.media_cpu_slots,
         engines=engines,
+        ram_reserve_mb=settings.media_ram_reserve_mb,
+        memory_gate=settings.media_memory_gate,
     )
     job_runner = JobRunner(
         container, scheduler, engines, lease_s=settings.job_lease_s, poll_s=settings.media_poll_s

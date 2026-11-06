@@ -210,3 +210,16 @@ def test_jobs_listed_in_order(container, company):
     add_jobs(container, company["id"], "x", 3)
     with container.tx() as s:
         assert len(list(s.scalars(select(Job).where(Job.kind == "x")))) == 3
+
+
+def test_memory_gate_uses_configured_reserve_and_can_be_disabled():
+    req = ResourceReq(device="cpu", est_ram_mb=900)
+    tight = ResourceScheduler(max_parallel=1, cpu_slots=1, ram_probe=lambda: 1100)
+    assert tight.try_acquire(req)[0] == "insufficient"
+    assert "900 + 256" in tight.last_reason
+    roomy = ResourceScheduler(
+        max_parallel=1, cpu_slots=1, ram_probe=lambda: 1100, ram_reserve_mb=100
+    )
+    assert roomy.try_acquire(req)[0] == "ok"
+    off = ResourceScheduler(max_parallel=1, cpu_slots=1, ram_probe=lambda: 10, memory_gate=False)
+    assert off.try_acquire(req)[0] == "ok"

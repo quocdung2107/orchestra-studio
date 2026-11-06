@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     ffprobe: str = "ffprobe"
     media_max_parallel: int = Field(default=1, ge=1, le=8)
     media_cpu_slots: int = Field(default=1, ge=1, le=16)
+    # RAM gate (ADR-0029). Reserve kept for OS + backend + UI; render estimate measured
+    # 2026-11-06 as ~620-880 MB peak RSS for 1080x1920 libx264 (bench R1/R2).
+    media_memory_gate: bool = True
+    media_ram_reserve_mb: int = Field(default=256, ge=0, le=8192)
+    render_est_ram_mb: int = Field(default=900, ge=0, le=16384)
     media_poll_s: float = Field(default=1.0, gt=0)
     job_lease_s: float = Field(default=120.0, gt=0)
     engine_keep_warm_s: float = Field(default=0.0, ge=0)

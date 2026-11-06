@@ -100,5 +100,6 @@ Muốn Orchestra tự bật engine khi cần và **tắt ngay khi xong** (đỡ 
 ## 6. Tài nguyên trên laptop 8 GB
 
 - `ORCHESTRA_MEDIA_MAX_PARALLEL=1` (mặc định): mỗi lúc một việc media.
-- Trước mỗi việc, scheduler so RAM trống với ước tính của engine (VieNeu ~2,5 GB, ZeroTTS ~2 GB, faster-whisper ~1,5 GB, render ~1,2 GB, chừa 512 MB). Thiếu thì tắt engine Orchestra đã bật mà đang rảnh, rồi đo lại. Vẫn thiếu thì việc **chờ**, không chạy liều. Các ước tính này là **giả định**, sẽ chỉnh theo số đo L3.
+- Trước mỗi việc, scheduler so RAM trống với ước tính của engine (VieNeu ~2,5 GB, ZeroTTS ~2 GB, faster-whisper ~1,5 GB là **giả định**, chỉnh theo số đo L3) và của render (900 MB; đo trên VM: FFmpeg 1080×1920 libx264 đỉnh 620–880 MB), chừa thêm 256 MB. Thiếu thì tắt engine Orchestra đã bật mà đang rảnh, rồi đo lại. Vẫn thiếu thì việc **chờ**, không chạy liều.
+- Chỉnh bằng biến môi trường trước khi chạy app: `ORCHESTRA_MEDIA_RAM_RESERVE_MB`, `ORCHESTRA_RENDER_EST_RAM_MB`, hoặc tắt cổng RAM bằng `ORCHESTRA_MEDIA_MEMORY_GATE=false` (rủi ro: máy có thể dùng pagefile và chậm hẳn).
 - Nên tắt Ollama khi render (Ollama giữ RAM của qwen3:4b).

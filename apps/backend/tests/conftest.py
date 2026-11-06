@@ -23,6 +23,8 @@ def settings(tmp_path: Path) -> Settings:
         retry_backoff_ms=0,
         secret_store="memory",
         media_runner_enabled=False,
+        # Tests must not depend on the host's free RAM; the gate is tested with injected probes.
+        media_memory_gate=False,
         engine_start_timeout_s=5,
     )
 
