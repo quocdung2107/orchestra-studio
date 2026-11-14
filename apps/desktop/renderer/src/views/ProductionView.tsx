@@ -27,8 +27,15 @@ function ProjectList({ companyId, onOpen }: { companyId: string; onOpen: (id: st
   const create = useCreateProject(companyId);
   const [json, setJson] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [seconds, setSeconds] = useState("15");
+  const secondsNum = Number(seconds);
+  const secondsOk = Number.isFinite(secondsNum) && secondsNum >= 5 && secondsNum <= 600;
 
-  const createFrom = (script: ScriptIn) => create.mutate(script, { onSuccess: (p) => onOpen(p.id) });
+  const createFrom = (script: ScriptIn) =>
+    create.mutate(
+      { ...script, target_duration_s: script.target_duration_s ?? secondsNum },
+      { onSuccess: (p) => onOpen(p.id) },
+    );
   const createFromJson = () => {
     try {
       setJsonError(null);
@@ -61,9 +68,26 @@ function ProjectList({ companyId, onOpen }: { companyId: string; onOpen: (id: st
       </Section>
       <Section title="Tạo video mới">
         {create.isError && <ErrorView error={create.error} />}
+        <label className="flex items-center gap-2 text-sm mb-3">
+          Độ dài video (giây)
+          <input
+            type="number"
+            min={5}
+            max={600}
+            step={1}
+            className={`${inputClass} w-24`}
+            value={seconds}
+            onChange={(e) => setSeconds(e.target.value)}
+            aria-label="Độ dài video (giây)"
+          />
+          <span className="text-xs text-slate-500">
+            Mặc định 15 s. Kịch bản dài hơn sẽ được cắt bớt cảnh cho vừa. Máy ít RAM nên giữ ngắn.
+          </span>
+        </label>
+        {!secondsOk && <p className="text-sm text-red-300 mb-2">Độ dài phải từ 5 đến 600 giây.</p>}
         <div className="flex flex-wrap gap-2 mb-3">
           {(samples.data ?? []).map((s) => (
-            <SecondaryButton key={s.id} disabled={create.isPending} onClick={() => createFrom(s.script)}>
+            <SecondaryButton key={s.id} disabled={create.isPending || !secondsOk} onClick={() => createFrom(s.script)}>
               Mẫu: {s.script.title}
             </SecondaryButton>
           ))}
@@ -76,12 +100,44 @@ function ProjectList({ companyId, onOpen }: { companyId: string; onOpen: (id: st
           aria-label="Kịch bản JSON"
         />
         {jsonError && <p className="text-sm text-red-300 mt-1">{jsonError}</p>}
-        <Button className="mt-2" disabled={!json.trim() || create.isPending} onClick={createFromJson}>
+        <Button className="mt-2" disabled={!json.trim() || create.isPending || !secondsOk} onClick={createFromJson}>
           Tạo từ kịch bản JSON
         </Button>
         <p className="text-xs text-slate-500 mt-2">Viết kịch bản bằng Claude sẽ có ở bước sau (đã chọn Claude cho kịch bản).</p>
       </Section>
     </div>
+  );
+}
+
+function DurationEditor(props: {
+  value: number;
+  min: number;
+  max: number;
+  disabled: boolean;
+  onSave: (v: number) => void;
+}) {
+  const [v, setV] = useState(String(props.value));
+  const n = Number(v);
+  const ok = Number.isFinite(n) && n >= props.min && n <= props.max;
+  return (
+    <span className="flex items-center gap-1">
+      mục tiêu
+      <input
+        type="number"
+        min={props.min}
+        max={props.max}
+        className={`${inputClass} w-20 py-0.5`}
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        aria-label="Độ dài mục tiêu (giây)"
+      />
+      giây ({props.min}–{props.max})
+      {n !== props.value && (
+        <SecondaryButton disabled={!ok || props.disabled} onClick={() => props.onSave(n)}>
+          Lưu độ dài
+        </SecondaryButton>
+      )}
+    </span>
   );
 }
 
@@ -102,13 +158,23 @@ export function ProjectDetail({ projectId, companyId, onBack }: { projectId: str
   );
   const retry = useProjectAction(projectId, () => post(`/api/v1/video-projects/${projectId}/retry`));
   const genAll = useProjectAction(projectId, () => post(`/api/v1/video-projects/${projectId}/images`, { mode: "cloud" }));
+  const setDuration = useProjectAction(projectId, async (target_duration_s: number) => {
+    const res = await fetch(`/api/v1/video-projects/${projectId}/duration`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ target_duration_s }),
+    });
+    const data = await res.json().catch(() => undefined);
+    if (!res.ok) throw toApiError(res.status, data);
+    return data;
+  });
 
   if (q.isLoading) return <Loading />;
   if (q.isError) return <ErrorView error={q.error} onRetry={() => q.refetch()} />;
   const p = q.data!;
   const missing = p.scenes.filter((s) => !s.image_asset_id).length;
   const busy = p.status === "producing";
-  const actionError = setSource.error ?? produce.error ?? retry.error ?? genAll.error;
+  const actionError = setSource.error ?? produce.error ?? retry.error ?? genAll.error ?? setDuration.error;
 
   return (
     <div className="max-w-4xl min-w-0">
@@ -119,9 +185,19 @@ export function ProjectDetail({ projectId, companyId, onBack }: { projectId: str
         <h1 className="text-lg font-semibold">{p.title}</h1>
         <StatusBadge status={p.status} />
       </div>
-      <p className="text-sm text-slate-400 mb-4">
-        {p.profile === "short" ? "Reels 9:16" : "Video dài 16:9"} · giọng: {p.voice_profile_name} · ước tính{" "}
-        {Math.round(p.estimated_duration_s)} giây (cho phép {p.profile_limits.min_s}–{p.profile_limits.max_s} giây)
+      <p className="text-sm text-slate-400 mb-4 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span>
+          {p.profile === "short" ? "Reels 9:16" : "Video dài 16:9"} · giọng: {p.voice_profile_name} · ước tính{" "}
+          {Math.round(p.estimated_duration_s)} giây ·
+        </span>
+        <DurationEditor
+          key={p.target_duration_s}
+          value={p.target_duration_s}
+          min={p.duration_limits.min_s}
+          max={p.duration_limits.max_s}
+          disabled={busy || setDuration.isPending}
+          onSave={(v) => setDuration.mutate(v)}
+        />
       </p>
       {p.last_error && (
         <div className="mb-3 p-2 rounded bg-red-950 border border-red-800 text-sm text-red-200">

@@ -1840,6 +1840,21 @@
         "title": "DependencyIn",
         "type": "object"
       },
+      "DurationIn": {
+        "properties": {
+          "target_duration_s": {
+            "maximum": 600.0,
+            "minimum": 5.0,
+            "title": "Target Duration S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "target_duration_s"
+        ],
+        "title": "DurationIn",
+        "type": "object"
+      },
       "EngineSpec": {
         "properties": {
           "base_url": {
@@ -3306,6 +3321,13 @@
             "title": "Created At",
             "type": "string"
           },
+          "duration_limits": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Duration Limits",
+            "type": "object"
+          },
           "estimated_duration_s": {
             "title": "Estimated Duration S",
             "type": "number"
@@ -3411,6 +3433,10 @@
             "title": "Status",
             "type": "string"
           },
+          "target_duration_s": {
+            "title": "Target Duration S",
+            "type": "number"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -3446,6 +3472,8 @@
           "music_gain_db",
           "last_error",
           "estimated_duration_s",
+          "target_duration_s",
+          "duration_limits",
           "profile_limits",
           "scenes",
           "latest_render",
@@ -4674,6 +4702,19 @@
             "minItems": 1,
             "title": "Scenes",
             "type": "array"
+          },
+          "target_duration_s": {
+            "anyOf": [
+              {
+                "maximum": 600.0,
+                "minimum": 5.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Duration S"
           },
           "title": {
             "maxLength": 300,
@@ -13175,6 +13216,79 @@
           }
         },
         "summary": "Get Project",
+        "tags": [
+          "production"
+        ]
+      }
+    },
+    "/api/v1/video-projects/{project_id}/duration": {
+      "put": {
+        "operationId": "set_duration_api_v1_video_projects__project_id__duration_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DurationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Set Duration",
         "tags": [
           "production"
         ]

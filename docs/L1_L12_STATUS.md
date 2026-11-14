@@ -64,3 +64,17 @@ Bảng gốc:
 ## 6. Làm tiếp từ đâu
 
 Sau khi Dung chốt D1–D6: chạy bench L2–L4 trên máy Dung (Remote Control), chọn giọng, ghi kết quả vào `bench/results/`, rồi mở PR vào main.
+
+## 7. Cập nhật 2026-11-15: độ dài video tùy chỉnh + nguyên nhân lỗi RAM
+
+**Nguyên nhân lỗi thật (đọc từ DB):** 20 job `tts.segment` của dự án "Mặt Trời" (profile long) đều `insufficient_resources`: "RAM trống 990 MB < cần 2500 + 256 MB", hoãn 121 lần rồi thất bại. Chưa có lần render nào chạy. Ước tính 2500 MB là của VieNeu (chưa đo), và VieNeu **chưa được cài** trên máy (`D:\OrchestraEngines\VieNeu-TTS` không tồn tại). RAM trống thường chỉ 0,75–1,9 GB vì Claude, Edge, VS Code.
+
+**Đo RAM FFmpeg trên máy Dung (đỉnh working set):** RAM tăng theo **số cảnh**, không theo số giây (7 cảnh 14 s và 56 s đều ~925 MB). Giới hạn 2 luồng (`-filter_complex_threads 1 -threads 2`) giảm khoảng 40%: 7 cảnh 926→561 MB, 15 cảnh 16:9 1144→825 MB, video 15 s (2–3 cảnh) 374–405 MB. Chậm hơn khoảng 1,3–1,6 lần.
+
+**Đã làm:**
+- `target_duration_s` cho mỗi dự án (mặc định 15 s; 5 s tới min(giới hạn profile, `ORCHESTRA_VIDEO_MAX_DURATION_S`=120)). Kịch bản được cắt theo cảnh rồi theo câu cho vừa; render kiểm lại bằng độ dài giọng thật và bỏ cảnh cuối nếu vượt mục tiêu + dung sai (max(2 s, 15%)). Đổi được độ dài trong UI (`PUT /video-projects/{id}/duration`), migration 0008.
+- QA dùng `duration_target` thay cho khoảng cố định của profile; cảnh báo nếu video ngắn hơn 60% mục tiêu hoặc có cảnh bị bỏ.
+- `ORCHESTRA_RENDER_THREADS` (mặc định 2); ước tính RAM render = 350 + 40×số cảnh MB.
+- Chạy thật trên máy Dung (backend riêng, dữ liệu tạm, giọng giả vì chưa có VieNeu): mẫu "bầu trời" → MP4 1080×1920, 15,8 s, render 10 s, QA pass; phụ đề Arial hiện đúng dấu tiếng Việt.
+
+**Còn lại:** cài VieNeu và đo RAM thật của nó (thay số 2500 MB giả định); muốn chạy giọng thật thì cần đóng bớt ứng dụng cho đủ ~2,8 GB trống, hoặc nâng RAM (D5).

@@ -27,6 +27,7 @@ from orchestra_backend.media_gateway.registry import (
     tts_provider,
 )
 from orchestra_backend.production import service as prod
+from orchestra_backend.production.duration import tolerance
 from orchestra_backend.production.models import VideoProject, VideoRender, VoiceSegment
 from orchestra_backend.render import ffmpeg_render, qa, subtitles
 from orchestra_backend.render.presets import PROFILES
@@ -220,12 +221,19 @@ def build_timeline(c: Container, render_id: uuid.UUID) -> tuple[Timeline, dict[s
         placeholders: list[str] = []
         all_text: list[str] = []
         store = _store(c)
+        limit = p.target_duration_s + tolerance(p.target_duration_s)
+        dropped: list[int] = []
         for sc in prod.scenes_of(s, p.id):
+            if dropped:
+                dropped.append(sc.index + 1)
+                continue
+            marks = (len(voice_parts), len(licenses), len(placeholders), len(all_text))
             img = s.get(Asset, sc.image_asset_id) if sc.image_asset_id else None
             if img is None:
                 raise JobError(
                     "scene_image_missing", f"Cảnh {sc.index + 1} chưa có ảnh", retryable=False
                 )
+            new_image = str(img.id) not in images
             images[str(img.id)] = store.path_for(img.sha256)
             licenses.append({"asset_id": str(img.id), **img.license_json})
             if img.provider == "fake_image":
@@ -258,6 +266,14 @@ def build_timeline(c: Container, render_id: uuid.UUID) -> tuple[Timeline, dict[s
                     voice_parts.append((None, SEGMENT_GAP_S))
                     cursor += SEGMENT_GAP_S
             dur = max(MIN_SCENE_S, cursor + sc.pause_after_s)
+            if scenes and t + dur > limit:
+                # Real narration ran longer than estimated: drop this and later scenes.
+                del voice_parts[marks[0] :], licenses[marks[1] :]
+                del placeholders[marks[2] :], all_text[marks[3] :]
+                if new_image:
+                    images.pop(str(img.id))
+                dropped.append(sc.index + 1)
+                continue
             voice_parts.append((None, dur - cursor))
             motion = MOTIONS[sc.index % len(MOTIONS)] if sc.motion == "auto" else sc.motion
             scenes.append(
@@ -306,8 +322,19 @@ def build_timeline(c: Container, render_id: uuid.UUID) -> tuple[Timeline, dict[s
             "profile": prof,
             "asr": st.asr_provider,
             "text": " ".join(all_text),
+            "target_s": p.target_duration_s,
+            "dropped_scenes": dropped,
         }
         return tl, extra
+
+
+def render_ram_estimate_mb(threads: int, scenes: int, uncapped_mb: int) -> int:
+    """Peak FFmpeg RAM. Measured 2026-11-15 (2 threads, 1080x1920): 2 scenes 374 MB,
+    3 scenes 405 MB, 7 scenes 561 MB; 15 scenes 1920x1080 825 MB. Every scene is its own
+    filter chain, so memory grows with scenes, not seconds. Uncapped threads: fixed setting."""
+    if threads <= 0:
+        return uncapped_mb
+    return 350 + 40 * max(1, scenes)
 
 
 class RenderHandler:
@@ -317,9 +344,12 @@ class RenderHandler:
         with c.tx() as s:
             r = s.get(VideoRender, uuid.UUID(job.payload_json["render_id"]))
             gpu = bool(r and r.encoder == "h264_nvenc")
+            n = len(prod.scenes_of(s, r.project_id)) if r else 0
         return ResourceReq(
             device="gpu" if gpu else "cpu",
-            est_ram_mb=c.settings.render_est_ram_mb,
+            est_ram_mb=render_ram_estimate_mb(
+                c.settings.render_threads, n, c.settings.render_est_ram_mb
+            ),
             min_vram_mb=300 if gpu else 0,
         )
 
@@ -346,6 +376,7 @@ class RenderHandler:
                 ),
                 "out.mp4",
                 x["encoder"],
+                threads=c.settings.render_threads,
             )
             secs, tail = ffmpeg_render.run_render(
                 args,
@@ -362,7 +393,19 @@ class RenderHandler:
                 x["profile"],
                 assets_license=x["licenses"],
                 placeholders=x["placeholders"],
+                target_s=x["target_s"],
             )
+            if x["dropped_scenes"]:
+                report["checks"].append(
+                    {
+                        "id": "scenes_dropped",
+                        "ok": False,
+                        "severity": "warning",
+                        "detail": "Bỏ cảnh "
+                        + ", ".join(map(str, x["dropped_scenes"]))
+                        + f" để giữ độ dài ~{x['target_s']:g}s",
+                    }
+                )
             store = _store(c)
             out_st = store.put_file(work / "out.mp4")
             voice_st = store.put_file(voice)

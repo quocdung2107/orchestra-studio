@@ -33,9 +33,10 @@ def _fake_voice(client, company_id):
     return r.json()
 
 
-def _sample(client, name="short_bau_troi"):
+def _sample(client, name="short_bau_troi", target=90):
     r = client.get("/api/v1/video-samples")
-    return next(x["script"] for x in r.json() if x["id"] == name)
+    script = next(x["script"] for x in r.json() if x["id"] == name)
+    return {**script, "target_duration_s": target}
 
 
 def _project(client, company_id, script):
@@ -117,11 +118,9 @@ def test_pipeline_resumes_after_restart(client, company, container):
     script = {
         "title": "Ngắn",
         "profile": "short",
+        "target_duration_s": 60,
         "scenes": [
-            {
-                "narration": "Đây là câu thử số một, đủ dài để có giọng đọc rõ ràng. "
-                * 4
-            },
+            {"narration": "Đây là câu thử số một, đủ dài để có giọng đọc rõ ràng. " * 4},
             {"narration": "Câu thử số hai cũng dài vừa phải để video vượt qua ba mươi giây. " * 4},
         ],
     }
@@ -195,12 +194,62 @@ def test_tts_engine_down_fails_with_clear_message_and_retry(client, company, con
     assert r.json()["status"] == "producing"
 
 
-def test_long_sample_builds_long_profile_segments(client, company):
+def test_long_sample_builds_long_profile_segments(client, company, monkeypatch):
+    from orchestra_backend.production import duration
+
+    monkeypatch.setattr(duration, "MAX_S", 600.0)
     _fake_voice(client, company["id"])
-    p = _project(client, company["id"], _sample(client, "long_mat_troi"))
+    p = _project(client, company["id"], _sample(client, "long_mat_troi", 600))
     assert p["profile"] == "long" and p["profile_limits"] == {"min_s": 180, "max_s": 600}
     assert p["estimated_duration_s"] >= 180
     norm = " ".join(s["normalized_text"] for sc in p["scenes"] for s in sc["segments"])
     assert (
         "một trăm năm mươi triệu ki lô mét" in norm and "chín mươi chín phẩy tám phần trăm" in norm
     )
+
+
+def test_default_length_is_15s_and_scenes_are_fitted(client, company):
+    _fake_voice(client, company["id"])
+    script = {k: v for k, v in _sample(client).items() if k != "target_duration_s"}
+    p = _project(client, company["id"], script)
+    assert p["target_duration_s"] == 15
+    assert p["duration_limits"] == {"min_s": 5, "max_s": 90}
+    assert 1 <= len(p["scenes"]) < len(script["scenes"])
+    assert p["estimated_duration_s"] <= 15 + 2.25
+
+
+@pytest.mark.parametrize("bad", [3, 121, 1000])
+def test_length_out_of_range_is_rejected(client, company, bad):
+    _fake_voice(client, company["id"])
+    r = client.post(
+        f"/api/v1/companies/{company['id']}/video-projects",
+        json={"script": _sample(client, target=bad)},
+    )
+    assert r.status_code == 422
+
+
+def test_change_length_before_work_refits_scenes(client, company):
+    _fake_voice(client, company["id"])
+    p = _project(client, company["id"], _sample(client, target=15))
+    n15 = len(p["scenes"])
+    r = client.put(f"/api/v1/video-projects/{p['id']}/duration", json={"target_duration_s": 60})
+    assert r.status_code == 200, r.text
+    assert r.json()["target_duration_s"] == 60 and len(r.json()["scenes"]) > n15
+    r = client.put(f"/api/v1/video-projects/{p['id']}/duration", json={"target_duration_s": 2})
+    assert r.status_code == 422
+
+
+def test_15s_video_renders_within_target(client, company, container, tmp_path):
+    cid = company["id"]
+    _fake_voice(client, cid)
+    p = _project(client, cid, _sample(client, target=15))
+    client.post(f"/api/v1/video-projects/{p['id']}/image-source", json={"source": "manual"})
+    client.post(f"/api/v1/video-projects/{p['id']}/produce", json={"allow_placeholders": True})
+    drain(container, 300)
+    out = client.get(f"/api/v1/video-projects/{p['id']}").json()
+    assert out["status"] == "ready", (out["last_error"], out["latest_render"])
+    checks = {c["id"]: c for c in out["latest_render"]["qa_json"]["checks"]}
+    assert checks["duration_target"]["ok"], checks["duration_target"]
+    f = tmp_path / "out.mp4"
+    f.write_bytes(client.get(f"/api/v1/assets/{out['latest_render']['asset_id']}/content").content)
+    assert 5 <= probe_media(f)["duration_s"] <= 17.25

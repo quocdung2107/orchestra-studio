@@ -42,6 +42,7 @@ from orchestra_backend.jobs.scheduler import ResourceScheduler
 from orchestra_backend.media.store import MediaStore
 from orchestra_backend.media_gateway import audio
 from orchestra_backend.orchestrator.service import Orchestrator
+from orchestra_backend.production import duration as video_duration
 from orchestra_backend.production.handlers import register_all
 from orchestra_backend.render import probe
 from orchestra_backend.runtime.llm.anthropic_rt import AnthropicRuntime
@@ -63,6 +64,7 @@ def _write_token_file(settings: Settings) -> None:
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
     settings.data_dir.mkdir(parents=True, exist_ok=True)
+    video_duration.configure(settings.video_default_duration_s, settings.video_max_duration_s)
 
     if settings.run_migrations_on_startup:
         migrate.upgrade(settings.resolved_database_url)

@@ -10,6 +10,7 @@ from orchestra_backend.core.errors import ErrorResponse, NotFoundError
 from orchestra_backend.production import service as prod
 from orchestra_backend.production.models import VideoProject, VoiceSegment
 from orchestra_backend.production.schemas import (
+    DurationIn,
     ImageSourceIn,
     ImagesRequest,
     JobOut,
@@ -83,6 +84,15 @@ def get_project(c: ContainerDep, project_id: uuid.UUID) -> ProjectOut:
 def set_image_source(c: ContainerDep, project_id: uuid.UUID, body: ImageSourceIn) -> ProjectOut:
     def run(s):  # type: ignore[no-untyped-def]
         p = prod.confirm_image_source(s, prod.get_project(s, project_id), body.source)
+        return prod.project_out(s, p)
+
+    return c.run_tx(run)
+
+
+@router.put("/video-projects/{project_id}/duration", response_model=ProjectOut)
+def set_duration(c: ContainerDep, project_id: uuid.UUID, body: DurationIn) -> ProjectOut:
+    def run(s):  # type: ignore[no-untyped-def]
+        p = prod.set_target_duration(s, prod.get_project(s, project_id), body.target_duration_s)
         return prod.project_out(s, p)
 
     return c.run_tx(run)

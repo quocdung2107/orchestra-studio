@@ -24,6 +24,8 @@ class ScriptIn(BaseModel):
     profile: Literal["short", "long"] = "short"
     scenes: list[SceneIn] = Field(min_length=1, max_length=200)
     notes: str = Field(default="", max_length=4000)
+    # Wanted length in seconds; None = the machine default (15 s). Scenes are fitted to it.
+    target_duration_s: float | None = Field(default=None, ge=5, le=600)
 
 
 class ProjectCreate(BaseModel):
@@ -65,6 +67,10 @@ class ProduceIn(BaseModel):
 class MusicIn(BaseModel):
     asset_id: uuid.UUID | None
     gain_db: float = Field(default=-18, ge=-40, le=0)
+
+
+class DurationIn(BaseModel):
+    target_duration_s: float = Field(ge=5, le=600)
 
 
 class VoiceProfileChoice(BaseModel):
@@ -153,6 +159,8 @@ class ProjectOut(ProjectSummary):
     music_gain_db: float
     last_error: str | None
     estimated_duration_s: float
+    target_duration_s: float
+    duration_limits: dict[str, float]
     profile_limits: dict[str, float]
     scenes: list[SceneOut]
     latest_render: RenderOut | None

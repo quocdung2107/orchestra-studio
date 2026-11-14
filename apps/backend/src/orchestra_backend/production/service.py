@@ -22,6 +22,7 @@ from orchestra_backend.jobs.models import Job
 from orchestra_backend.jobs.runner import enqueue, retry_job
 from orchestra_backend.media.models import Asset
 from orchestra_backend.media_gateway.registry import get_settings, tts_provider
+from orchestra_backend.production import duration
 from orchestra_backend.production.models import VideoProject, VideoRender, VideoScene, VoiceSegment
 from orchestra_backend.production.schemas import (
     JobOut,
@@ -38,7 +39,7 @@ from orchestra_backend.voice.models import VoiceProfileVersion
 from orchestra_backend.voice.normalize_vi import normalize
 from orchestra_backend.voice.segment import split_segments
 
-CHARS_PER_SECOND = 14.0  # rough Vietnamese narration speed for estimates only
+CHARS_PER_SECOND = duration.CHARS_PER_SECOND
 
 
 # ---- lookups ---------------------------------------------------------------------------
@@ -137,27 +138,20 @@ def create_project(
     )
     if profile.company_id != company_id:
         raise DomainValidationError("Voice profile thuộc công ty khác", code="voice_profile_scope")
+    target = duration.validate_target(
+        script.target_duration_s or duration.DEFAULT_S, script.profile
+    )
     p = VideoProject(
         company_id=company_id,
         title=script.title,
         profile=script.profile,
         voice_profile_id=profile.id,
         script_json=script.model_dump(mode="json"),
+        target_duration_s=target,
     )
     s.add(p)
     s.flush()
-    version = voices.current_version(s, profile)
-    for i, sc in enumerate(script.scenes):
-        scene = VideoScene(
-            project_id=p.id,
-            index=i,
-            narration=sc.narration.strip(),
-            visual_prompt=sc.visual_prompt,
-            motion=sc.motion,
-        )
-        s.add(scene)
-        s.flush()
-        build_segments(s, p, scene, version)
+    _build_scenes(s, p, voices.current_version(s, profile))
     append_event(
         s,
         company_id=company_id,
@@ -165,6 +159,46 @@ def create_project(
         payload={"project_id": str(p.id), "title": p.title, "profile": p.profile},
         source="production",
     )
+    return p
+
+
+def _build_scenes(s: Session, p: VideoProject, version: VoiceProfileVersion) -> None:
+    """Create scenes from the stored script, keeping only what fits the target length."""
+    script = ScriptIn.model_validate({k: v for k, v in p.script_json.items() if k != "fit"})
+    kept, dropped = duration.fit_narrations(
+        [sc.narration.strip() for sc in script.scenes], p.target_duration_s
+    )
+    for i, text in enumerate(kept):
+        src = script.scenes[i]
+        scene = VideoScene(
+            project_id=p.id,
+            index=i,
+            narration=text,
+            visual_prompt=src.visual_prompt,
+            motion=src.motion,
+        )
+        s.add(scene)
+        s.flush()
+        build_segments(s, p, scene, version)
+    p.script_json = {**p.script_json, "fit": {"kept": len(kept), "dropped": dropped}}
+
+
+def set_target_duration(s: Session, p: VideoProject, target_s: float) -> VideoProject:
+    """Change the wanted length. Before any work is done the scenes are fitted again from the
+    script; after that the scenes stay and the render drops scenes that do not fit."""
+    p.target_duration_s = duration.validate_target(target_s, p.profile)
+    scenes = scenes_of(s, p.id)
+    untouched = (
+        p.status in ("draft", "failed")
+        and not any(sc.image_asset_id for sc in scenes)
+        and not any(x.status == "ready" for x in _all_segments(s, p.id))
+    )
+    if untouched:
+        s.execute(delete(VoiceSegment).where(VoiceSegment.project_id == p.id))
+        s.execute(delete(VideoScene).where(VideoScene.project_id == p.id))
+        s.flush()
+        _build_scenes(s, p, voices.current_version(s, voices.get(s, p.voice_profile_id)))
+    _touch(p)
     return p
 
 
@@ -358,6 +392,7 @@ def content_key(s: Session, p: VideoProject) -> str:
     st = get_settings(s, p.company_id)
     data: dict[str, Any] = {
         "profile": p.profile,
+        "target": p.target_duration_s,
         "music": [str(p.music_asset_id), p.music_gain_db],
         "encoder": st.encoder,
         "font": st.subtitle_font,
@@ -501,7 +536,11 @@ def project_out(s: Session, p: VideoProject) -> ProjectOut:
         music_asset_id=p.music_asset_id,
         music_gain_db=p.music_gain_db,
         last_error=p.last_error,
-        estimated_duration_s=round(total_chars / CHARS_PER_SECOND + 0.6 * len(scenes), 1),
+        estimated_duration_s=round(
+            total_chars / CHARS_PER_SECOND + duration.SCENE_OVERHEAD_S * len(scenes), 1
+        ),
+        target_duration_s=p.target_duration_s,
+        duration_limits=dict(zip(("min_s", "max_s"), duration.limits(p.profile), strict=True)),
         profile_limits={"min_s": prof_limits.min_s, "max_s": prof_limits.max_s},
         scenes=scenes,
         latest_render=RenderOut.model_validate(latest) if latest else None,

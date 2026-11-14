@@ -29,6 +29,8 @@ const project = (image_source: string | null) => ({
   music_gain_db: -18,
   last_error: null,
   estimated_duration_s: 52,
+  target_duration_s: 15,
+  duration_limits: { min_s: 5, max_s: 90 },
   profile_limits: { min_s: 30, max_s: 90 },
   scenes: [
     {

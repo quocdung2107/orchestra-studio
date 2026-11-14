@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from orchestra_backend.media_gateway.audio import run_ffmpeg
+from orchestra_backend.production.duration import MIN_TARGET_S, tolerance
 from orchestra_backend.render.presets import Profile
 from orchestra_backend.render.probe import probe_media
 from orchestra_backend.render.timeline import Timeline
@@ -36,6 +37,7 @@ def run_qa(
     *,
     assets_license: list[dict[str, Any]],
     placeholders: list[str],
+    target_s: float | None = None,
 ) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
     info = probe_media(video)
@@ -59,13 +61,33 @@ def run_qa(
     checks.append(
         _check("audio_rate", a.get("sample_rate") == 48000, f"rate={a.get('sample_rate')}")
     )
-    checks.append(
-        _check(
-            "duration_profile",
-            profile.min_s <= dur <= profile.max_s,
-            f"{dur:.1f}s, profile {profile.id} cần {profile.min_s:.0f}–{profile.max_s:.0f}s",
+    if target_s is not None:
+        tol = tolerance(target_s)
+        checks.append(
+            _check(
+                "duration_target",
+                MIN_TARGET_S <= dur <= target_s + tol,
+                f"{dur:.1f}s, mục tiêu {target_s:g}s (cho phép tới {target_s + tol:.1f}s)",
+            )
         )
-    )
+        if dur < target_s * 0.6:
+            checks.append(
+                _check(
+                    "duration_short",
+                    False,
+                    f"Video {dur:.1f}s ngắn hơn nhiều so với mục tiêu {target_s:g}s"
+                    " (kịch bản không đủ dài)",
+                    severity="warning",
+                )
+            )
+    else:
+        checks.append(
+            _check(
+                "duration_profile",
+                profile.min_s <= dur <= profile.max_s,
+                f"{dur:.1f}s, profile {profile.id} cần {profile.min_s:.0f}–{profile.max_s:.0f}s",
+            )
+        )
     checks.append(
         _check(
             "duration_timeline",

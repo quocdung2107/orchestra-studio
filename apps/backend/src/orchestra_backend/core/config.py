@@ -63,6 +63,13 @@ class Settings(BaseSettings):
     engine_keep_warm_s: float = Field(default=0.0, ge=0)
     engine_start_timeout_s: float = Field(default=180.0, gt=0)
     render_timeout_s: float = Field(default=3600.0, gt=0)
+    # FFmpeg threads for render; 0 = FFmpeg default (all cores). Measured 2026-11-15 on Dung's
+    # PC: 7 scenes 1080x1920 peak 926 MB at default, 561 MB with 2 threads (15 scenes 16:9:
+    # 1144 -> 825 MB). RAM grows with the number of scenes, not with the length.
+    render_threads: int = Field(default=2, ge=0, le=32)
+    # Video length (seconds): default for new projects and the upper limit on this machine.
+    video_default_duration_s: float = Field(default=15.0, ge=5, le=600)
+    video_max_duration_s: float = Field(default=120.0, ge=5, le=600)
     # Disable the background media runner (tests drive it explicitly).
     media_runner_enabled: bool = True
 
