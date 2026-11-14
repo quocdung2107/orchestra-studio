@@ -16,7 +16,9 @@ MIN_TARGET_S = 5.0
 # Machine settings, set once at startup from Settings (configure()).
 DEFAULT_S = 15.0
 MAX_S = 120.0
-CHARS_PER_SECOND = 14.0  # rough Vietnamese narration speed, estimates only
+# Vietnamese narration speed, estimates only. Measured 2026-11-15 with VieNeu "Thùy Dung":
+# ~19 chars/s after silence trim; 18 keeps a small margin.
+CHARS_PER_SECOND = 18.0
 SCENE_OVERHEAD_S = 0.6  # lead-in/gaps/pause per scene, estimate only
 
 _SENTENCE = re.compile(r"(?<=[.!?…])\s+")

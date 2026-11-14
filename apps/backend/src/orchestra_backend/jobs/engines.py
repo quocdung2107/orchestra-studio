@@ -163,10 +163,21 @@ class EngineManager:
         return bool(st and st.proc and st.proc.poll() is None)
 
     def is_warm(self, engine_id: str) -> bool:
+        """Running now, so its RAM is already in use. An external engine (started outside
+        Orchestra) is health-checked here: without this the RAM gate would count its memory
+        twice and block jobs although the engine is up (seen on Dung's PC, 2026-11-15)."""
         st = self._state.get(engine_id)
-        if st is None:
+        if st is not None and (
+            self.is_managed_alive(engine_id) or time.monotonic() - st.last_ok < 30
+        ):
+            return True
+        spec = self._specs.get(engine_id)
+        if spec is None or spec.command is not None:
             return False
-        return self.is_managed_alive(engine_id) or (time.monotonic() - st.last_ok < 30)
+        if self._health(spec):
+            self._st(engine_id).last_ok = time.monotonic()
+            return True
+        return False
 
     def status(self, engine_id: str) -> dict[str, object]:
         spec = self.spec(engine_id)

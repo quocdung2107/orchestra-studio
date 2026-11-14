@@ -7,8 +7,8 @@ from orchestra_backend.production import duration
 
 
 def test_fit_keeps_whole_scenes_then_sentences():
-    a = "Câu một ngắn. " * 3  # ~42 chars -> ~3.6 s with overhead
-    kept, dropped = duration.fit_narrations([a.strip(), a.strip(), a.strip(), a.strip()], 8)
+    a = "Câu một ngắn. " * 3  # ~41 chars -> ~2.9 s with overhead
+    kept, dropped = duration.fit_narrations([a.strip(), a.strip(), a.strip(), a.strip()], 6)
     assert len(kept) == 2 and dropped == 2
 
 

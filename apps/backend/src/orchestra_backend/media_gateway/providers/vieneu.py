@@ -33,7 +33,8 @@ class VieneuTts:
         label="VieNeu-TTS v3 Turbo (local)",
         capabilities={"voice_clone": True, "speed": False, "langs": ["vi", "en"], "max_chars": 256},
         # CPU ONNX fp32 on Dung's laptop (CUDA 12.7 driver < 12.8 needed by its GPU path).
-        hardware=HardwareReq(device="cpu", engine="vieneu", est_ram_mb=2500),
+        # Measured 2026-11-15 (vieneu 3.8.4): peak working set 1235 MB, commit ~1.7 GB.
+        hardware=HardwareReq(device="cpu", engine="vieneu", est_ram_mb=1400),
         license=LicenseMeta(
             code="Apache-2.0",
             weights="Apache-2.0 (pnnbao-ump/VieNeu-TTS-v3-Turbo model card)",

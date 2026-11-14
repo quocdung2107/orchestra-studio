@@ -78,3 +78,5 @@ Sau khi Dung chốt D1–D6: chạy bench L2–L4 trên máy Dung (Remote Contro
 - Chạy thật trên máy Dung (backend riêng, dữ liệu tạm, giọng giả vì chưa có VieNeu): mẫu "bầu trời" → MP4 1080×1920, 15,8 s, render 10 s, QA pass; phụ đề Arial hiện đúng dấu tiếng Việt.
 
 **Còn lại:** cài VieNeu và đo RAM thật của nó (thay số 2500 MB giả định); muốn chạy giọng thật thì cần đóng bớt ứng dụng cho đủ ~2,8 GB trống, hoặc nâng RAM (D5).
+
+**2026-11-15 (tiếp):** Đã merge vào main theo yêu cầu của Dung. VieNeu đã cài và chạy thật: RAM đỉnh đo được 1235 MB, nên ước tính đổi 2500 → 1400 MB. Engine chạy ngoài Orchestra giờ được tính là "đang chạy" (không bị bộ kiểm RAM tính hai lần). Tốc độ đọc ước tính đổi 14 → 18 ký tự/giây theo số đo. Video 15 s giọng "Thùy Dung" thật: 11,9 s, QA đạt hết.

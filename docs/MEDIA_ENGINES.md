@@ -39,6 +39,8 @@ Lưu ý đã đọc trong mã nguồn server (`apps/openai_speech.py`, 2026-11-0
 - Không có tham số seed.
 - Giọng miền Nam theo README: Adam, Thái Sơn, Thục Đoan, Minh Triết, Mỹ Duyên, Đức Trí, Kim Thanh, Thùy Dung. Profile mặc định của Orchestra là **Thùy Dung** (giới tính suy từ tên, chưa nghe kiểm chứng). Đổi ở "Cài đặt sản xuất → Giọng kênh → Lấy danh sách".
 
+**Đã cài trên máy Dung (2026-11-15):** `D:\OrchestraEngines\VieNeu-TTS` (vieneu 3.8.4, commit 22dd2ef), `data/engines.json` cho Orchestra tự bật/tắt. Đo trên máy: RAM đỉnh 1235 MB (commit ~1,7 GB), khởi động ~1 phút lần đầu (tải model), đọc 113 ký tự mất 4,4 s; tốc độ đọc ~19 ký tự/giây. 25 giọng, có "Thùy Dung". Watermark đang bật (D2).
+
 Cũng có thể dùng bộ cài Windows ở vieneu.io, miễn là nó mở server OpenAI-compatible ở cổng 8000 (chưa kiểm chứng bộ cài đó làm vậy).
 
 ## 3. ZeroTTS (TTS phụ, CPU nhanh)
